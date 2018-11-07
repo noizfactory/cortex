@@ -53,7 +53,7 @@ using namespace IECoreScene;
 namespace
 {
 
-MeshPrimitivePtr processMesh( const MeshPrimitive *mesh, const std::string &densityMask, const std::string &uvSet, const std::string &position )
+MeshPrimitivePtr processMesh( const MeshPrimitive *mesh, const std::string &densityMask, const std::string &uvSet, const std::string &position, const std::string &color )
 {
 	if( !mesh )
 	{
@@ -85,6 +85,13 @@ MeshPrimitivePtr processMesh( const MeshPrimitive *mesh, const std::string &dens
 		result->variables[densityMask] = PrimitiveVariable( PrimitiveVariable::Constant, new FloatData( 1.0 ) );
 	}
 
+	const Color3fVectorData *colors = mesh->variableData<const Color3fVectorData>( color );
+	if ( !colors )
+	{
+		std::string e = boost::str( boost::format( "MeshAlgo::distributePoints : MeshPrimitive has no suitable \"%s\" primitive variable." ) % color );
+		throw InvalidArgumentException( e );
+	}
+
 	return result;
 }
 
@@ -92,8 +99,8 @@ struct Emitter
 {
 	public :
 
-		Emitter( MeshPrimitiveEvaluator *evaluator, const PrimitiveVariable &densityVar, std::vector<Imath::V3f> &positions, size_t triangleIndex, const Imath::V2f &v0, const Imath::V2f &v1, const Imath::V2f &v2 )
-			: m_meshEvaluator( evaluator ), m_densityVar( densityVar ), m_p( positions ), m_triangleIndex( triangleIndex ), m_v0( v0 ), m_v1( v1 ), m_v2( v2 )
+		Emitter( MeshPrimitiveEvaluator *evaluator, const PrimitiveVariable &densityVar, const PrimitiveVariable &colorVar, std::vector<Imath::V3f> &positions, size_t triangleIndex, const Imath::V2f &v0, const Imath::V2f &v1, const Imath::V2f &v2 )
+			: m_meshEvaluator( evaluator ), m_densityVar( densityVar ), m_colorVar( colorVar ), m_p( positions ), m_triangleIndex( triangleIndex ), m_v0( v0 ), m_v1( v1 ), m_v2( v2 )
 		{
 			m_evaluatorResult = boost::static_pointer_cast<MeshPrimitiveEvaluator::Result>( m_meshEvaluator->createResult() );
 		}
@@ -109,12 +116,18 @@ struct Emitter
 					m_p.push_back( m_evaluatorResult->point() );
 				}
 			}
+
+			if ( m_evaluatorResult->colorPrimVar( m_colorVar ) )
+			{
+				m_colorVar.push_back( m_evaluatorResult->Color3f() );
+			}
 		}
 
 	private :
 
 		MeshPrimitiveEvaluator *m_meshEvaluator;
 		const PrimitiveVariable &m_densityVar;
+		const PrimitiveVariable &m_colorVar;
 		std::vector<Imath::V3f> &m_p;
 		size_t m_triangleIndex;
 		Imath::V2f m_v0;
@@ -129,13 +142,13 @@ struct Generator
 {
 	public :
 
-		Generator( MeshPrimitiveEvaluator *evaluator, const std::vector<Imath::V2f> &uvs, const std::vector<float> &faceArea, const std::vector<float> &textureArea, float density, const PrimitiveVariable &densityVar, Imath::V2f offset )
-			: m_meshEvaluator( evaluator ), m_uvs( uvs ), m_faceArea( faceArea ), m_textureArea( textureArea ), m_density( density ), m_densityVar( densityVar ), m_offset( offset ), m_positions()
+		Generator( MeshPrimitiveEvaluator *evaluator, const std::vector<Imath::V2f> &uvs, const std::vector<float> &faceArea, const std::vector<float> &textureArea, float density, const PrimitiveVariable &densityVar, const PrimitiveVariable &colorVar, Imath::V2f offset )
+			: m_meshEvaluator( evaluator ), m_uvs( uvs ), m_faceArea( faceArea ), m_textureArea( textureArea ), m_density( density ), m_densityVar( densityVar ), m_colorVar( colorVar ), m_offset( offset ), m_positions()
 		{
 		}
 
 		Generator( Generator &that, tbb::split )
-			: m_meshEvaluator( that.m_meshEvaluator ), m_uvs( that.m_uvs ), m_faceArea( that.m_faceArea ), m_textureArea( that.m_textureArea ), m_density( that.m_density ), m_densityVar( that.m_densityVar ), m_offset( that.m_offset ), m_positions()
+			: m_meshEvaluator( that.m_meshEvaluator ), m_uvs( that.m_uvs ), m_faceArea( that.m_faceArea ), m_textureArea( that.m_textureArea ), m_density( that.m_density ), m_densityVar( that.m_densityVar ), m_colorVar( that.colorVar ), m_offset( that.m_offset ), m_positions()
 		{
 		}
 
@@ -162,7 +175,7 @@ struct Generator
 				uvBounds.extendBy( uv1 );
 				uvBounds.extendBy( uv2 );
 
-				Emitter emitter( m_meshEvaluator, m_densityVar, m_positions, i, uv0, uv1, uv2 );
+				Emitter emitter( m_meshEvaluator, m_densityVar, m_colorVar, m_positions, i, uv0, uv1, uv2 );
 				PointDistribution::defaultInstance()( uvBounds, textureDensity, emitter );
 			}
 		}
@@ -187,6 +200,7 @@ struct Generator
 		const std::vector<float> &m_textureArea;
 		float m_density;
 		const PrimitiveVariable &m_densityVar;
+		const PrimitiveVariable &m_colorVar;
 		Imath::V2f m_offset;
 
 		std::vector<Imath::V3f> m_positions;
@@ -195,23 +209,24 @@ struct Generator
 
 } // namespace
 
-PointsPrimitivePtr MeshAlgo::distributePoints( const MeshPrimitive *mesh, float density, const Imath::V2f &offset, const std::string &densityMask, const std::string &uvSet, const std::string &position )
+PointsPrimitivePtr MeshAlgo::distributePoints( const MeshPrimitive *mesh, float density, const Imath::V2f &offset, const std::string &densityMask, const std::string &uvSet, const std::string &position, const std::string &color )
 {
 	if( density < 0 )
 	{
 		throw InvalidArgumentException( "MeshAlgo::distributePoints : The density of the distribution cannot be negative." );
 	}
 
-	MeshPrimitivePtr updatedMesh = processMesh( mesh, densityMask, uvSet, position );
+	MeshPrimitivePtr updatedMesh = processMesh( mesh, densityMask, uvSet, position, color );
 	MeshPrimitiveEvaluatorPtr meshEvaluator = new MeshPrimitiveEvaluator( updatedMesh );
 
 	ConstV2fVectorDataPtr uvData = updatedMesh->expandedVariableData<V2fVectorData>( uvSet, PrimitiveVariable::FaceVarying, true /* throwOnInvalid*/ );
 	const std::vector<float> &faceArea = updatedMesh->variableData<FloatVectorData>( "faceArea", PrimitiveVariable::Uniform )->readable();
 	const std::vector<float> &textureArea = updatedMesh->variableData<FloatVectorData>( "textureArea", PrimitiveVariable::Uniform )->readable();
 	const PrimitiveVariable &densityVar = updatedMesh->variables.find( densityMask )->second;
+	const PrimitiveVariable &colorVar = updatedMesh->variables.find( color )->second;
 
 	size_t numFaces = updatedMesh->verticesPerFace()->readable().size();
-	Generator gen( meshEvaluator.get(), uvData->readable(), faceArea, textureArea, density, densityVar, offset );
+	Generator gen( meshEvaluator.get(), uvData->readable(), faceArea, textureArea, density, densityVar, color, offset );
 
 	tbb::task_group_context taskGroupContext( tbb::task_group_context::isolated );
 	tbb::auto_partitioner partitioner;
