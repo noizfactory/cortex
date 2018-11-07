@@ -116,8 +116,6 @@ struct Emitter
 					m_p.push_back( m_evaluatorResult->point() );
 				}
 			}
-
-			m_colorVar.push_back( m_meshEvaluator->colorPrimVar( m_colorVar ) );
 		}
 
 	private :
