@@ -117,10 +117,7 @@ struct Emitter
 				}
 			}
 
-			if ( m_evaluatorResult->colorPrimVar( m_colorVar ) )
-			{
-				m_colorVar.push_back( m_evaluatorResult->Color3f() );
-			}
+			m_colorVar.push_back( m_meshEvaluator->colorPrimVar( m_colorVar ) );
 		}
 
 	private :
@@ -148,7 +145,7 @@ struct Generator
 		}
 
 		Generator( Generator &that, tbb::split )
-			: m_meshEvaluator( that.m_meshEvaluator ), m_uvs( that.m_uvs ), m_faceArea( that.m_faceArea ), m_textureArea( that.m_textureArea ), m_density( that.m_density ), m_densityVar( that.m_densityVar ), m_colorVar( that.colorVar ), m_offset( that.m_offset ), m_positions()
+			: m_meshEvaluator( that.m_meshEvaluator ), m_uvs( that.m_uvs ), m_faceArea( that.m_faceArea ), m_textureArea( that.m_textureArea ), m_density( that.m_density ), m_densityVar( that.m_densityVar ), m_colorVar( that.m_colorVar ), m_offset( that.m_offset ), m_positions()
 		{
 		}
 
