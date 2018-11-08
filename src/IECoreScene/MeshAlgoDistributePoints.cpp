@@ -53,7 +53,7 @@ using namespace IECoreScene;
 namespace
 {
 
-MeshPrimitivePtr processMesh( const MeshPrimitive *mesh, const std::string &densityMask, const std::string &uvSet, const std::string &position, const std::string &color )
+MeshPrimitivePtr processMesh( const MeshPrimitive *mesh, const std::string &densityMask, const std::string &color, const std::string &uvSet, const std::string &position )
 {
 	if( !mesh )
 	{
@@ -204,14 +204,14 @@ struct Generator
 
 } // namespace
 
-PointsPrimitivePtr MeshAlgo::distributePoints( const MeshPrimitive *mesh, float density, const Imath::V2f &offset, const std::string &densityMask, const std::string &uvSet, const std::string &position, const std::string &color )
+PointsPrimitivePtr MeshAlgo::distributePoints( const MeshPrimitive *mesh, float density, const Imath::V2f &offset, const std::string &densityMask, const std::string &color, const std::string &uvSet, const std::string &position )
 {
 	if( density < 0 )
 	{
 		throw InvalidArgumentException( "MeshAlgo::distributePoints : The density of the distribution cannot be negative." );
 	}
 
-	MeshPrimitivePtr updatedMesh = processMesh( mesh, densityMask, uvSet, position, color );
+	MeshPrimitivePtr updatedMesh = processMesh( mesh, densityMask, color, uvSet, position );
 	MeshPrimitiveEvaluatorPtr meshEvaluator = new MeshPrimitiveEvaluator( updatedMesh );
 
 	ConstV2fVectorDataPtr uvData = updatedMesh->expandedVariableData<V2fVectorData>( uvSet, PrimitiveVariable::FaceVarying, true /* throwOnInvalid*/ );
