@@ -221,7 +221,7 @@ PointsPrimitivePtr MeshAlgo::distributePoints( const MeshPrimitive *mesh, float 
 	const PrimitiveVariable &colorVar = updatedMesh->variables.find( color )->second;
 
 	size_t numFaces = updatedMesh->verticesPerFace()->readable().size();
-	Generator gen( meshEvaluator.get(), uvData->readable(), faceArea, textureArea, density, densityVar, color, offset );
+	Generator gen( meshEvaluator.get(), uvData->readable(), faceArea, textureArea, density, densityVar, colorVar, offset );
 
 	tbb::task_group_context taskGroupContext( tbb::task_group_context::isolated );
 	tbb::auto_partitioner partitioner;
