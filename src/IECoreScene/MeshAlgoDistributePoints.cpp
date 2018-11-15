@@ -116,6 +116,8 @@ struct Emitter
 					m_p.push_back( m_evaluatorResult->point() );
 				}
 			}
+			// Sample the color primvar and store into the evaluator
+			m_evaluatorResult->colorPrimVar( m_colorVar );
 		}
 
 	private :
