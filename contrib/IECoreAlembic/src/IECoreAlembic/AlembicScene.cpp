@@ -393,8 +393,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0;
 			}
 
-			AbcA::CompoundPropertyReaderPtr propertyReader = NULL;
-
 			if ( name == "scene:visible" )
 			{
 				ICompoundProperty defaultProperties = m_xform.getProperties();
@@ -404,12 +402,21 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 
 				if ( !propertyReader )
 				{
 					return 0;
 				}
+
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+				if( !scalarPropertyReader )
+				{
+					return 0;
+				}
+
+				return scalarPropertyReader->getNumSamples();
 			}
 			else
 			{
@@ -426,16 +433,16 @@ class AlembicScene::AlembicReader : public AlembicIO
 				{
 					return 0;
 				}
+
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+				if( !scalarPropertyReader )
+				{
+					return 0;
+				}
+
+				return scalarPropertyReader->getNumSamples();
 			}
-
-			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
-
-			if( !scalarPropertyReader )
-			{
-				return 0;
-			}
-
-			return scalarPropertyReader->getNumSamples();
 		}
 
 		double attributeSampleTime( const Name &name, size_t sampleIndex ) const
@@ -445,8 +452,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
-			AbcA::CompoundPropertyReaderPtr propertyReader = NULL;
-
 			if ( name == "scene:visible" )
 			{
 				ICompoundProperty defaultProperties = m_xform.getProperties();
@@ -456,12 +461,21 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 
 				if ( !propertyReader )
 				{
 					return 0;
 				}
+
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+				if ( !scalarPropertyReader )
+				{
+					return 0;
+				}
+				auto timeSampling = scalarPropertyReader->getTimeSampling();
+				return timeSampling->getSampleTime( sampleIndex );
 			}
 			else
 			{
@@ -472,22 +486,22 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
 
 				if ( !propertyReader )
 				{
 					return 0;
 				}
-			}
 
-			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
 
-			if ( !scalarPropertyReader )
-			{
-				return 0;
+				if ( !scalarPropertyReader )
+				{
+					return 0;
+				}
+				auto timeSampling = scalarPropertyReader->getTimeSampling();
+				return timeSampling->getSampleTime( sampleIndex );
 			}
-			auto timeSampling = scalarPropertyReader->getTimeSampling();
-			return timeSampling->getSampleTime( sampleIndex );
 		}
 
 		double attributeSampleInterval( const Name &name, double time, size_t &floorIndex, size_t &ceilIndex ) const
@@ -497,8 +511,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
-			AbcA::CompoundPropertyReaderPtr propertyReader = NULL;
-
 			if ( name == "scene:visible" )
 			{
 				ICompoundProperty defaultProperties = m_xform.getProperties();
@@ -508,12 +520,21 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 
 				if ( !propertyReader )
 				{
 					return 0;
 				}
+
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+				if ( !scalarPropertyReader )
+				{
+					return 0.0;
+				}
+
+				return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
 			}
 			else
 			{
@@ -524,22 +545,22 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
 
 				if ( !propertyReader )
 				{
 					return 0.0;
 				}
+
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+				if ( !scalarPropertyReader )
+				{
+					return 0.0;
+				}
+
+				return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
 			}
-
-			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
-
-			if ( !scalarPropertyReader )
-			{
-				return 0.0;
-			}
-
-			return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
 		}
 
 		IECore::ConstObjectPtr readAttributeAtSample( const Name &name, size_t sampleIndex ) const
@@ -549,7 +570,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return nullptr;
 			}
 
-			CompoundPropertyReaderPtr propertyReader = NULL;
+			CompoundPropertyReaderPtr * propertyReader = NULL;
 
 			if ( name == "scene:visible" )
 			{
