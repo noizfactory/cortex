@@ -327,16 +327,32 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return false;
 			}
 
-			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-			if( !userProperties.valid() )
+			if ( name == "scene:visible" )
 			{
-				return false;
+				ICompoundProperty defaultProperties = m_xform.getProperties();
+				
+				if( !defaultProperties.valid() )
+				{
+					return false;
+				}
+
+				const AbcA::PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( name.string() );
+
+				return propertyHeader != nullptr;
 			}
+			else
+			{
+				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
-			const AbcA::PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
+				if( !userProperties.valid() )
+				{
+					return false;
+				}
 
-			return propertyHeader != nullptr;
+				const AbcA::PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
+
+				return propertyHeader != nullptr;
+			}
 		}
 
 		void attributeNames( NameList &attrs ) const
@@ -348,18 +364,25 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return;
 			}
 
-			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-			if( !userProperties.valid() )
+			if ( name == "scene:visible" )
 			{
-				return;
+				attrs.push_back( InternedString( "visible" ));
 			}
-
-			attrs.reserve( userProperties.getNumProperties() );
-
-			for( size_t i = 0; i < userProperties.getNumProperties(); ++i )
+			else
 			{
-				attrs.push_back( InternedString( userProperties.getPropertyHeader( i ).getName() ) );
+				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+				if( !userProperties.valid() )
+				{
+					return;
+				}
+
+				attrs.reserve( userProperties.getNumProperties() );
+
+				for( size_t i = 0; i < userProperties.getNumProperties(); ++i )
+				{
+					attrs.push_back( InternedString( userProperties.getPropertyHeader( i ).getName() ) );
+				}
 			}
 		}
 
@@ -370,18 +393,37 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0;
 			}
 
-			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-			if ( !userProperties.valid() )
+			if ( name == "scene:visible" )
 			{
-				return 0;
+				ICompoundProperty defaultProperties = m_xform.getProperties();
+				
+				if( !defaultProperties.valid() )
+				{
+					return 0;
+				}
+
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+
+				if ( !propertyReader )
+				{
+					return 0;
+				}
 			}
-
-			Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
-
-			if ( !propertyReader )
+			else
 			{
-				return 0;
+				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+				if ( !userProperties.valid() )
+				{
+					return 0;
+				}
+
+				Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+
+				if ( !propertyReader )
+				{
+					return 0;
+				}
 			}
 
 			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
@@ -401,18 +443,37 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
-			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-			if ( !userProperties.valid() )
+			if ( name == "scene:visible" )
 			{
-				return 0;
+				ICompoundProperty defaultProperties = m_xform.getProperties();
+				
+				if( !defaultProperties.valid() )
+				{
+					return 0;
+				}
+
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+
+				if ( !propertyReader )
+				{
+					return 0;
+				}
 			}
-
-			Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
-
-			if ( !propertyReader )
+			else
 			{
-				return 0;
+				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+				if ( !userProperties.valid() )
+				{
+					return 0;
+				}
+
+				Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+
+				if ( !propertyReader )
+				{
+					return 0;
+				}
 			}
 
 			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
@@ -432,18 +493,37 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
-			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-			if ( !userProperties.valid() )
+			if ( name == "scene:visible" )
 			{
-				return 0;
+				ICompoundProperty defaultProperties = m_xform.getProperties();
+				
+				if( !defaultProperties.valid() )
+				{
+					return 0;
+				}
+
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+
+				if ( !propertyReader )
+				{
+					return 0;
+				}
 			}
-
-			Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
-
-			if ( !propertyReader )
+			else
 			{
-				return 0.0;
+				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+				if ( !userProperties.valid() )
+				{
+					return 0;
+				}
+
+				Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+
+				if ( !propertyReader )
+				{
+					return 0.0;
+				}
 			}
 
 			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
@@ -463,27 +543,53 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return nullptr;
 			}
 
-			const IXformSchema &schema = m_xform.getSchema();
-			auto userProperties = schema.getUserProperties();
-
-			const PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
-			if( !propertyHeader )
+			if ( name == "scene:visible" )
 			{
-				return nullptr;
-			}
+				auto defaultProperties = m_xform.getProperties();
 
-			if( propertyHeader->getPropertyType() != kScalarProperty )
+				const PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( name.string() );
+				if( !propertyHeader )
+				{
+					return nullptr;
+				}
+
+				if( propertyHeader->getPropertyType() != kScalarProperty )
+				{
+					IECore::msg(
+						IECore::Msg::Warning,
+						"AlembicScene::readAttributeAtSample",
+						boost::format( "Unsupported property type :%1%. Only scalar properties are currently supported: %2%" ) %
+							propertyHeader->getPropertyType() %
+							kScalarProperty
+					);
+				}
+
+				CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+			}
+			else
 			{
-				IECore::msg(
-					IECore::Msg::Warning,
-					"AlembicScene::readAttributeAtSample",
-					boost::format( "Unsupported property type :%1%. Only scalar properties are currently supported: %2%" ) %
-						propertyHeader->getPropertyType() %
-						kScalarProperty
-				);
-			}
+				const IXformSchema &schema = m_xform.getSchema();
+				auto userProperties = schema.getUserProperties();
 
-			CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				const PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
+				if( !propertyHeader )
+				{
+					return nullptr;
+				}
+
+				if( propertyHeader->getPropertyType() != kScalarProperty )
+				{
+					IECore::msg(
+						IECore::Msg::Warning,
+						"AlembicScene::readAttributeAtSample",
+						boost::format( "Unsupported property type :%1%. Only scalar properties are currently supported: %2%" ) %
+							propertyHeader->getPropertyType() %
+							kScalarProperty
+					);
+				}
+
+				CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+			}
 
 			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
 
@@ -1536,9 +1642,17 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
-			OXformSchema &schema = m_xform.getSchema();
+			if ( name == "scene:visible" )
+			{
+				T prop( m_xform.getProperties(), name );
+			}
+			else
+			{
+				OXformSchema &schema = m_xform.getSchema();
 
-			T prop( schema.getUserProperties(), name );
+				T prop( schema.getUserProperties(), name );
+			}
+			
 			m_scalarProperties.insert( std::make_pair( name, prop ) );
 
 			prop.set( data->readable() );
