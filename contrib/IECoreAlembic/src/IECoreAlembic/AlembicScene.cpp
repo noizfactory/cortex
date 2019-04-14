@@ -570,7 +570,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return nullptr;
 			}
 
-			CompoundPropertyReaderPtr * propertyReader = NULL;
+			CompoundPropertyReaderPtr *propertyReader = NULL;
 
 			if ( name == "scene:visible" )
 			{
@@ -1671,22 +1671,24 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
-			T prop = NULL;
-
 			if ( name == "scene:visible" )
 			{
-				prop( m_xform.getProperties(), name );
+				T prop( m_xform.getProperties(), name );
+
+				m_scalarProperties.insert( std::make_pair( name, prop ) );
+
+				prop.set( data->readable() );
 			}
 			else
 			{
 				OXformSchema &schema = m_xform.getSchema();
 
-				prop( schema.getUserProperties(), name );
-			}
-			
-			m_scalarProperties.insert( std::make_pair( name, prop ) );
+				T prop( schema.getUserProperties(), name );
 
-			prop.set( data->readable() );
+				m_scalarProperties.insert( std::make_pair( name, prop ) );
+
+				prop.set( data->readable() );
+			}
 		}
 
 		void writeAttribute( const Name &name, const IECore::Object *attribute, double time )
