@@ -393,6 +393,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0;
 			}
 
+			AbcA::CompoundPropertyReaderPtr propertyReader = NULL;
+
 			if ( name == "scene:visible" )
 			{
 				ICompoundProperty defaultProperties = m_xform.getProperties();
@@ -402,7 +404,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 
 				if ( !propertyReader )
 				{
@@ -418,7 +420,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( userProperties );
 
 				if ( !propertyReader )
 				{
@@ -443,6 +445,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
+			AbcA::CompoundPropertyReaderPtr propertyReader = NULL;
+
 			if ( name == "scene:visible" )
 			{
 				ICompoundProperty defaultProperties = m_xform.getProperties();
@@ -452,7 +456,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 
 				if ( !propertyReader )
 				{
@@ -468,7 +472,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( userProperties );
 
 				if ( !propertyReader )
 				{
@@ -493,6 +497,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
+			AbcA::CompoundPropertyReaderPtr propertyReader = NULL;
+
 			if ( name == "scene:visible" )
 			{
 				ICompoundProperty defaultProperties = m_xform.getProperties();
@@ -502,7 +508,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 
 				if ( !propertyReader )
 				{
@@ -518,7 +524,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				Abc::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( userProperties );
 
 				if ( !propertyReader )
 				{
@@ -543,6 +549,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return nullptr;
 			}
 
+			CompoundPropertyReaderPtr propertyReader = NULL;
+
 			if ( name == "scene:visible" )
 			{
 				auto defaultProperties = m_xform.getProperties();
@@ -564,7 +572,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					);
 				}
 
-				CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 			}
 			else
 			{
@@ -588,7 +596,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					);
 				}
 
-				CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				propertyReader = GetCompoundPropertyReaderPtr( userProperties );
 			}
 
 			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
@@ -1642,15 +1650,17 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
+			T prop = NULL;
+
 			if ( name == "scene:visible" )
 			{
-				T prop( m_xform.getProperties(), name );
+				prop( m_xform.getProperties(), name );
 			}
 			else
 			{
 				OXformSchema &schema = m_xform.getSchema();
 
-				T prop( schema.getUserProperties(), name );
+				prop( schema.getUserProperties(), name );
 			}
 			
 			m_scalarProperties.insert( std::make_pair( name, prop ) );
