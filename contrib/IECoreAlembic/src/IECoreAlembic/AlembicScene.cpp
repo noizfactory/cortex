@@ -329,6 +329,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 			if ( name == "scene:visible" )
 			{
+				printf("Inside scene:visible property for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty defaultProperties = m_xform.getProperties();
 				
 				if( !defaultProperties.valid() )
@@ -336,7 +337,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return false;
 				}
 
-				const AbcA::PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( name.string() );
+				const AbcA::PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( "visible" );
 
 				return propertyHeader != nullptr;
 			}
@@ -412,7 +413,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
 
 				if( !scalarPropertyReader )
 				{
@@ -471,7 +472,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
 
 				if ( !scalarPropertyReader )
 				{
@@ -530,7 +531,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0;
 				}
 
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
 
 				if ( !scalarPropertyReader )
 				{
@@ -574,12 +575,13 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 
 			CompoundPropertyReaderPtr propertyReader = NULL;
+			ScalarPropertyReaderPtr scalarPropertyReader = NULL;
 
 			if ( name == "scene:visible" )
 			{
 				auto defaultProperties = m_xform.getProperties();
 
-				const PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( name.string() );
+				const PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( "visible" );
 				if( !propertyHeader )
 				{
 					return nullptr;
@@ -597,6 +599,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 				}
 
 				propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
 			}
 			else
 			{
@@ -621,9 +624,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				}
 
 				propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+				scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
 			}
-
-			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
 
 			if ( !scalarPropertyReader )
 			{
@@ -1676,7 +1678,7 @@ class AlembicScene::AlembicWriter : public AlembicIO
 
 			if ( name == "scene:visible" )
 			{
-				T prop( m_xform.getProperties(), name );
+				T prop( m_xform.getProperties(), "visible" );
 
 				m_scalarProperties.insert( std::make_pair( name, prop ) );
 
