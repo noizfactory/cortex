@@ -343,6 +343,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
+				printf("Inside userProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 				if( !userProperties.valid() )
@@ -365,6 +366,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return;
 			}
 
+			printf("Inside attributeNames userProperties for %s\n", m_xform.getFullName().c_str());
 			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 			if( !userProperties.valid() )
@@ -424,6 +426,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
+				printf("Inside numAttributeSamples userProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 				if ( !userProperties.valid() )
@@ -483,6 +486,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
+				printf("Inside attributeSampleTime userProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 				if ( !userProperties.valid() )
@@ -603,6 +607,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
+				printf("Inside readAttributeAtSample userProperties for %s\n", m_xform.getFullName().c_str());
 				const IXformSchema &schema = m_xform.getSchema();
 				auto userProperties = schema.getUserProperties();
 
