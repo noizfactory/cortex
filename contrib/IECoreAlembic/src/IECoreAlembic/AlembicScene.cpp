@@ -653,7 +653,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 				int8_t visible;
 				scalarPropertyReader->getSample( sampleIndex, &visible );
-				printf("Visibility at current frame for %s = %d\n", m_xform.getFullName().c_str(), visible);
+				printf("Visibility at frame %lu for %s = %d\n", sampleIndex, m_xform.getFullName().c_str(), visible);
 				if (visible == -1)
 				{
 					visible = 1;
