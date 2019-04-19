@@ -327,10 +327,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return false;
 			}
 
-			printf("Inside hasAttribute method for %s\n", m_xform.getFullName().c_str());
 			if ( name == "scene:visible" )
 			{
-				printf("Inside visible property for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty defaultProperties = m_xform.getProperties();
 				
 				if( !defaultProperties.valid() )
@@ -344,7 +342,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
-				printf("Inside userProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 				if( !userProperties.valid() )
@@ -367,46 +364,44 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return;
 			}
 
-			printf("Inside attributeNames for %s\n", m_xform.getFullName().c_str());
-			// ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-			// if( !userProperties.valid() )
-			// {
-			// 	return;
-			// }
-
-			// attrs.reserve( userProperties.getNumProperties() );
-
-			// for( size_t i = 0; i < userProperties.getNumProperties(); ++i )
-			// {
-			// 	attrs.push_back( InternedString( userProperties.getPropertyHeader( i ).getName() ) );
-			// }
-
-			printf("Looking up default visible property for %s\n", m_xform.getFullName().c_str());
 			ICompoundProperty defaultProperties = m_xform.getProperties();
 				
 			if( !defaultProperties.valid() )
 			{
-				return;
-			}
-
-			AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
-
-			if ( !propertyReader )
-			{
-				return;
-			}
-
-			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
-
-			if( !scalarPropertyReader )
-			{
-				return;
 			}
 			else
 			{
-				printf("Found default visible property for %s\n", m_xform.getFullName().c_str());
-				attrs.push_back( InternedString( "scene:visible" ) );
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+
+				if ( !propertyReader )
+				{
+					return;
+				}
+
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
+
+				if( !scalarPropertyReader )
+				{
+					return;
+				}
+				else
+				{
+					attrs.push_back( InternedString( "scene:visible" ) );
+				}
+			}
+
+			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+			if( !userProperties.valid() )
+			{
+				return;
+			}
+
+			attrs.reserve( userProperties.getNumProperties() );
+
+			for( size_t i = 0; i < userProperties.getNumProperties(); ++i )
+			{
+				attrs.push_back( InternedString( userProperties.getPropertyHeader( i ).getName() ) );
 			}
 			
 		}
@@ -418,11 +413,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0;
 			}
 
-			printf("Inside numAttributeSamples for %s\n", m_xform.getFullName().c_str());
-
 			if ( name == "scene:visible" )
 			{
-				printf("Inside numAttributeSamples defaultProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty defaultProperties = m_xform.getProperties();
 				
 				if( !defaultProperties.valid() )
@@ -448,7 +440,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
-				printf("Inside numAttributeSamples userProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 				if ( !userProperties.valid() )
@@ -483,7 +474,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 			if ( name == "scene:visible" )
 			{
-				printf("Inside attributeSampleTime defaultProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty defaultProperties = m_xform.getProperties();
 				
 				if( !defaultProperties.valid() )
@@ -509,7 +499,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
-				printf("Inside attributeSampleTime userProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 				if ( !userProperties.valid() )
@@ -544,7 +533,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 			if ( name == "scene:visible" )
 			{
-				printf("Inside attributeSampleInterval defaultProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty defaultProperties = m_xform.getProperties();
 				
 				if( !defaultProperties.valid() )
@@ -566,12 +554,10 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0.0;
 				}
 
-				printf("sampleInterval(): getNumSamples() = %lu, time = %f, floorIndex = %lu, ceilndex = %lu\n", scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex);
 				return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
 			}
 			else
 			{
-				printf("Inside attributeSampleInterval userProperties for %s\n", m_xform.getFullName().c_str());
 				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 				if ( !userProperties.valid() )
@@ -609,7 +595,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 			if ( name == "scene:visible" )
 			{
-				printf("Inside readAttributeAtSample defaultProperties for %s at property %s\n", m_xform.getFullName().c_str(), name.c_str());
 				auto defaultProperties = m_xform.getProperties();
 
 				const PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( "visible" );
@@ -656,7 +641,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 				int8_t visible;
 				scalarPropertyReader->getSample( sampleIndex, &visible );
-				printf("Visibility at frame %lu for %s = %d\n", sampleIndex, m_xform.getFullName().c_str(), visible);
 				if (visible == -1)
 				{
 					visible = 1;
@@ -677,7 +661,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 			else
 			{
-				printf("Inside readAttributeAtSample userProperties for %s at property %s\n", m_xform.getFullName().c_str(), name.c_str());
 				const IXformSchema &schema = m_xform.getSchema();
 				auto userProperties = schema.getUserProperties();
 
@@ -1123,7 +1106,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 				}
 				else
 				{
-					printf("\nChecking if default visible property is animated for %s\n", m_xform.getFullName().c_str());
 					h.append( fileName() );
 					h.append( m_xform ? m_xform.getFullName() : "/" );
 
