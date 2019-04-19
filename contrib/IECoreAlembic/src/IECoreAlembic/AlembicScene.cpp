@@ -418,6 +418,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0;
 			}
 
+			printf("Inside numAttributeSamples for %s\n", m_xform.getFullName().c_str());
+
 			if ( name == "scene:visible" )
 			{
 				printf("Inside numAttributeSamples defaultProperties for %s\n", m_xform.getFullName().c_str());
@@ -564,6 +566,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return 0.0;
 				}
 
+				printf("sampleInterval(): getNumSamples() = %lu, time = %f, floorIndex = %lu, ceilndex = %lu\n", scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex);
 				return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
 			}
 			else
@@ -657,11 +660,11 @@ class AlembicScene::AlembicReader : public AlembicIO
 				if (visible == -1)
 				{
 					visible = 1;
-					return new IECore::IntData( visible );
+					return new IECore::BoolData( true );
 				}
 				else
 				{
-					return new IECore::IntData( visible );
+					return new IECore::BoolData( false );
 				}
 
 				IECore::msg(
@@ -1106,6 +1109,28 @@ class AlembicScene::AlembicReader : public AlembicIO
 				if( isAnimated( compoundProperty ) )
 				{
 					h.append( time );
+				}
+			}
+
+			ICompoundProperty defaultProperties = m_xform.getProperties();				
+			if( defaultProperties.valid() )
+			{
+				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
+				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
+				if( !scalarPropertyReader )
+				{
+					return;
+				}
+				else
+				{
+					printf("\nChecking if default visible property is animated for %s\n", m_xform.getFullName().c_str());
+					h.append( fileName() );
+					h.append( m_xform ? m_xform.getFullName() : "/" );
+
+					if ( !scalarPropertyReader->isConstant() )
+					{
+						h.append( time );
+					}
 				}
 			}
 		}
