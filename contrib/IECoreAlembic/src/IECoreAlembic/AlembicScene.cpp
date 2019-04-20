@@ -48,12 +48,14 @@
 
 #include "Alembic/AbcCoreFactory/IFactory.h"
 #include "Alembic/AbcCoreOgawa/ReadWrite.h"
+#include "Alembic/Abc/IScalarProperty.h"
 #include "Alembic/AbcGeom/ArchiveBounds.h"
 #include "Alembic/AbcGeom/ICamera.h"
 #include "Alembic/AbcGeom/IGeomBase.h"
 #include "Alembic/AbcGeom/IXform.h"
 #include "Alembic/AbcGeom/OXform.h"
 #include "Alembic/AbcGeom/OGeomParam.h"
+#include "Alembic/AbcGeom/Visibility.h"
 
 #include "Alembic/AbcCollection/ICollections.h"
 #include "Alembic/AbcCollection/OCollections.h"
@@ -1790,217 +1792,228 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
-			if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
+			if ( name == "scene:visible" )
 			{
-				setProperty<OBoolProperty>( name, time, data );
-			}
-			else if( const IECore::UCharData *data = runTimeCast<const IECore::UCharData>( attribute ) )
-			{
-				setProperty<OUcharProperty>( name, time, data );
-			}
-			else if( const IECore::CharData *data = runTimeCast<const IECore::CharData>( attribute ) )
-			{
-				setProperty<OCharProperty>( name, time, data );
-			}
-			else if( const IECore::UShortData *data = runTimeCast<const IECore::UShortData>( attribute ) )
-			{
-				setProperty<OUInt16Property>( name, time, data );
-			}
-			else if( const IECore::ShortData *data = runTimeCast<const IECore::ShortData>( attribute ) )
-			{
-				setProperty<OInt16Property>( name, time, data );
-			}
-			else if( const IECore::UIntData *data = runTimeCast<const IECore::UIntData>( attribute ) )
-			{
-				setProperty<OUInt32Property>( name, time, data );
-			}
-			else if( const IECore::IntData *data = runTimeCast<const IECore::IntData>( attribute ) )
-			{
-				setProperty<OInt32Property>( name, time, data );
-			}
-			else if( const IECore::UInt64Data *data = runTimeCast<const IECore::UInt64Data>( attribute ) )
-			{
-				setProperty<OUInt64Property>( name, time, data );
-			}
-			else if( const IECore::Int64Data *data = runTimeCast<const IECore::Int64Data>( attribute ) )
-			{
-				setProperty<OInt64Property>( name, time, data );
-			}
-			else if( const IECore::HalfData *data = runTimeCast<const IECore::HalfData>( attribute ) )
-			{
-				setProperty<OHalfProperty>( name, time, data );
-			}
-			else if( const IECore::FloatData *data = runTimeCast<const IECore::FloatData>( attribute ) )
-			{
-				setProperty<OFloatProperty>( name, time, data );
-			}
-			else if( const IECore::DoubleData *data = runTimeCast<const IECore::DoubleData>( attribute ) )
-			{
-				setProperty<ODoubleProperty>( name, time, data );
-			}
-			else if( const IECore::StringData *data = runTimeCast<const IECore::StringData>( attribute ) )
-			{
-				setProperty<OStringProperty>( name, time, data );
-			}
-			else if( const IECore::V2iData *data = runTimeCast<const IECore::V2iData>( attribute ) )
-			{
-				if( data->getInterpretation() == GeometricData::Interpretation::Point )
+				printf( "\nWriting visibility for %s", m_xform.getFullName().c_str() );
+				if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
 				{
-					setProperty<OP2iProperty>( name, time, data );
+					printf( "\nScene visibility attribute %s", name.c_str() );
+					setProperty<OBoolProperty>( name, time, data );
 				}
-				else
-				{
-					setProperty<OV2iProperty>( name, time, data );
-				}
-			}
-			else if( const IECore::V2fData *data = runTimeCast<const IECore::V2fData>( attribute ) )
-			{
-				if( data->getInterpretation() == GeometricData::Interpretation::Point )
-				{
-					setProperty<OP2fProperty>( name, time, data );
-				}
-				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-				{
-					setProperty<ON2fProperty>( name, time, data );
-				}
-				else
-				{
-					setProperty<OV2fProperty>( name, time, data );
-				}
-			}
-			else if( const IECore::V2dData *data = runTimeCast<const IECore::V2dData>( attribute ) )
-			{
-				if( data->getInterpretation() == GeometricData::Interpretation::Point )
-				{
-					setProperty<OP2dProperty>( name, time, data );
-				}
-				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-				{
-					setProperty<ON2dProperty>( name, time, data );
-				}
-				else
-				{
-					setProperty<OV2dProperty>( name, time, data );
-				}
-			}
-			else if( const IECore::V3iData *data = runTimeCast<const IECore::V3iData>( attribute ) )
-			{
-				if( data->getInterpretation() == GeometricData::Interpretation::Point )
-				{
-					setProperty<OP3iProperty>( name, time, data );
-				}
-				else
-				{
-					setProperty<OV3iProperty>( name, time, data );
-				}
-			}
-			else if( const IECore::V3fData *data = runTimeCast<const IECore::V3fData>( attribute ) )
-			{
-				if( data->getInterpretation() == GeometricData::Interpretation::Point )
-				{
-					setProperty<OP3fProperty>( name, time, data );
-				}
-				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-				{
-					setProperty<ON3fProperty>( name, time, data );
-				}
-				else
-				{
-					setProperty<OV3fProperty>( name, time, data );
-				}
-			}
-			else if( const IECore::V3dData *data = runTimeCast<const IECore::V3dData>( attribute ) )
-			{
-
-				if( data->getInterpretation() == GeometricData::Interpretation::Point )
-				{
-					setProperty<OP3dProperty>( name, time, data );
-				}
-				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-				{
-					setProperty<ON3dProperty>( name, time, data );
-				}
-				else
-				{
-					setProperty<OV3dProperty>( name, time, data );
-				}
-			}
-			else if( const IECore::Box2iData *data = runTimeCast<const IECore::Box2iData>( attribute ) )
-			{
-				setProperty<OBox2iProperty>( name, time, data );
-			}
-			else if( const IECore::Box2fData *data = runTimeCast<const IECore::Box2fData>( attribute ) )
-			{
-				setProperty<OBox2fProperty>( name, time, data );
-			}
-			else if( const IECore::Box2dData *data = runTimeCast<const IECore::Box2dData>( attribute ) )
-			{
-				setProperty<OBox2dProperty>( name, time, data );
-			}
-			else if( const IECore::Box3iData *data = runTimeCast<const IECore::Box3iData>( attribute ) )
-			{
-				setProperty<OBox3iProperty>( name, time, data );
-			}
-			else if( const IECore::Box3fData *data = runTimeCast<const IECore::Box3fData>( attribute ) )
-			{
-				setProperty<OBox3fProperty>( name, time, data );
-			}
-			else if( const IECore::Box3dData *data = runTimeCast<const IECore::Box3dData>( attribute ) )
-			{
-				setProperty<OBox3dProperty>( name, time, data );
-			}
-			else if( const IECore::M33fData *data = runTimeCast<const IECore::M33fData>( attribute ) )
-			{
-				setProperty<OM33fProperty>( name, time, data );
-			}
-			else if( const IECore::M33dData *data = runTimeCast<const IECore::M33dData>( attribute ) )
-			{
-				setProperty<OM33dProperty>( name, time, data );
-			}
-			else if( const IECore::M44fData *data = runTimeCast<const IECore::M44fData>( attribute ) )
-			{
-				setProperty<OM44fProperty>( name, time, data );
-			}
-			else if( const IECore::M44dData *data = runTimeCast<const IECore::M44dData>( attribute ) )
-			{
-				setProperty<OM44dProperty>( name, time, data );
-			}
-			else if( const IECore::QuatfData *data = runTimeCast<const IECore::QuatfData>( attribute ) )
-			{
-				setProperty<OQuatfProperty>( name, time, data );
-			}
-			else if( const IECore::QuatdData *data = runTimeCast<const IECore::QuatdData>( attribute ) )
-			{
-				setProperty<OQuatdProperty>( name, time, data );
-			}
-			else if( const IECore::Color3fData *data = runTimeCast<const IECore::Color3fData>( attribute ) )
-			{
-				setProperty<OC3fProperty>( name, time, data );
-			}
-			else if( const IECore::Color4fData *data = runTimeCast<const IECore::Color4fData>( attribute ) )
-			{
-				setProperty<OC4fProperty>( name, time, data );
 			}
 			else
-			{
-				Path path;
-				std::string pathStr;
-				this->path( path );
-				pathToString( path, pathStr );
-				IECore::msg(
-						IECore::Msg::Warning,
-						"AlembicScene::writeAttribute",
-						boost::str(
-							boost::format( "Cannot write attribute ( attribute name: '%1%', attribute type: '%2%', time: %3% ) at location '%4%'. " ) %
-								name.string() %
-								attribute->typeName() %
-								time %
-								pathStr
-						)
-					);
+			{			
+				if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
+				{
+					setProperty<OBoolProperty>( name, time, data );
+				}
+				else if( const IECore::UCharData *data = runTimeCast<const IECore::UCharData>( attribute ) )
+				{
+					setProperty<OUcharProperty>( name, time, data );
+				}
+				else if( const IECore::CharData *data = runTimeCast<const IECore::CharData>( attribute ) )
+				{
+					setProperty<OCharProperty>( name, time, data );
+				}
+				else if( const IECore::UShortData *data = runTimeCast<const IECore::UShortData>( attribute ) )
+				{
+					setProperty<OUInt16Property>( name, time, data );
+				}
+				else if( const IECore::ShortData *data = runTimeCast<const IECore::ShortData>( attribute ) )
+				{
+					setProperty<OInt16Property>( name, time, data );
+				}
+				else if( const IECore::UIntData *data = runTimeCast<const IECore::UIntData>( attribute ) )
+				{
+					setProperty<OUInt32Property>( name, time, data );
+				}
+				else if( const IECore::IntData *data = runTimeCast<const IECore::IntData>( attribute ) )
+				{
+					setProperty<OInt32Property>( name, time, data );
+				}
+				else if( const IECore::UInt64Data *data = runTimeCast<const IECore::UInt64Data>( attribute ) )
+				{
+					setProperty<OUInt64Property>( name, time, data );
+				}
+				else if( const IECore::Int64Data *data = runTimeCast<const IECore::Int64Data>( attribute ) )
+				{
+					setProperty<OInt64Property>( name, time, data );
+				}
+				else if( const IECore::HalfData *data = runTimeCast<const IECore::HalfData>( attribute ) )
+				{
+					setProperty<OHalfProperty>( name, time, data );
+				}
+				else if( const IECore::FloatData *data = runTimeCast<const IECore::FloatData>( attribute ) )
+				{
+					setProperty<OFloatProperty>( name, time, data );
+				}
+				else if( const IECore::DoubleData *data = runTimeCast<const IECore::DoubleData>( attribute ) )
+				{
+					setProperty<ODoubleProperty>( name, time, data );
+				}
+				else if( const IECore::StringData *data = runTimeCast<const IECore::StringData>( attribute ) )
+				{
+					setProperty<OStringProperty>( name, time, data );
+				}
+				else if( const IECore::V2iData *data = runTimeCast<const IECore::V2iData>( attribute ) )
+				{
+					if( data->getInterpretation() == GeometricData::Interpretation::Point )
+					{
+						setProperty<OP2iProperty>( name, time, data );
+					}
+					else
+					{
+						setProperty<OV2iProperty>( name, time, data );
+					}
+				}
+				else if( const IECore::V2fData *data = runTimeCast<const IECore::V2fData>( attribute ) )
+				{
+					if( data->getInterpretation() == GeometricData::Interpretation::Point )
+					{
+						setProperty<OP2fProperty>( name, time, data );
+					}
+					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+					{
+						setProperty<ON2fProperty>( name, time, data );
+					}
+					else
+					{
+						setProperty<OV2fProperty>( name, time, data );
+					}
+				}
+				else if( const IECore::V2dData *data = runTimeCast<const IECore::V2dData>( attribute ) )
+				{
+					if( data->getInterpretation() == GeometricData::Interpretation::Point )
+					{
+						setProperty<OP2dProperty>( name, time, data );
+					}
+					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+					{
+						setProperty<ON2dProperty>( name, time, data );
+					}
+					else
+					{
+						setProperty<OV2dProperty>( name, time, data );
+					}
+				}
+				else if( const IECore::V3iData *data = runTimeCast<const IECore::V3iData>( attribute ) )
+				{
+					if( data->getInterpretation() == GeometricData::Interpretation::Point )
+					{
+						setProperty<OP3iProperty>( name, time, data );
+					}
+					else
+					{
+						setProperty<OV3iProperty>( name, time, data );
+					}
+				}
+				else if( const IECore::V3fData *data = runTimeCast<const IECore::V3fData>( attribute ) )
+				{
+					if( data->getInterpretation() == GeometricData::Interpretation::Point )
+					{
+						setProperty<OP3fProperty>( name, time, data );
+					}
+					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+					{
+						setProperty<ON3fProperty>( name, time, data );
+					}
+					else
+					{
+						setProperty<OV3fProperty>( name, time, data );
+					}
+				}
+				else if( const IECore::V3dData *data = runTimeCast<const IECore::V3dData>( attribute ) )
+				{
 
+					if( data->getInterpretation() == GeometricData::Interpretation::Point )
+					{
+						setProperty<OP3dProperty>( name, time, data );
+					}
+					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+					{
+						setProperty<ON3dProperty>( name, time, data );
+					}
+					else
+					{
+						setProperty<OV3dProperty>( name, time, data );
+					}
+				}
+				else if( const IECore::Box2iData *data = runTimeCast<const IECore::Box2iData>( attribute ) )
+				{
+					setProperty<OBox2iProperty>( name, time, data );
+				}
+				else if( const IECore::Box2fData *data = runTimeCast<const IECore::Box2fData>( attribute ) )
+				{
+					setProperty<OBox2fProperty>( name, time, data );
+				}
+				else if( const IECore::Box2dData *data = runTimeCast<const IECore::Box2dData>( attribute ) )
+				{
+					setProperty<OBox2dProperty>( name, time, data );
+				}
+				else if( const IECore::Box3iData *data = runTimeCast<const IECore::Box3iData>( attribute ) )
+				{
+					setProperty<OBox3iProperty>( name, time, data );
+				}
+				else if( const IECore::Box3fData *data = runTimeCast<const IECore::Box3fData>( attribute ) )
+				{
+					setProperty<OBox3fProperty>( name, time, data );
+				}
+				else if( const IECore::Box3dData *data = runTimeCast<const IECore::Box3dData>( attribute ) )
+				{
+					setProperty<OBox3dProperty>( name, time, data );
+				}
+				else if( const IECore::M33fData *data = runTimeCast<const IECore::M33fData>( attribute ) )
+				{
+					setProperty<OM33fProperty>( name, time, data );
+				}
+				else if( const IECore::M33dData *data = runTimeCast<const IECore::M33dData>( attribute ) )
+				{
+					setProperty<OM33dProperty>( name, time, data );
+				}
+				else if( const IECore::M44fData *data = runTimeCast<const IECore::M44fData>( attribute ) )
+				{
+					setProperty<OM44fProperty>( name, time, data );
+				}
+				else if( const IECore::M44dData *data = runTimeCast<const IECore::M44dData>( attribute ) )
+				{
+					setProperty<OM44dProperty>( name, time, data );
+				}
+				else if( const IECore::QuatfData *data = runTimeCast<const IECore::QuatfData>( attribute ) )
+				{
+					setProperty<OQuatfProperty>( name, time, data );
+				}
+				else if( const IECore::QuatdData *data = runTimeCast<const IECore::QuatdData>( attribute ) )
+				{
+					setProperty<OQuatdProperty>( name, time, data );
+				}
+				else if( const IECore::Color3fData *data = runTimeCast<const IECore::Color3fData>( attribute ) )
+				{
+					setProperty<OC3fProperty>( name, time, data );
+				}
+				else if( const IECore::Color4fData *data = runTimeCast<const IECore::Color4fData>( attribute ) )
+				{
+					setProperty<OC4fProperty>( name, time, data );
+				}
+				else
+				{
+					Path path;
+					std::string pathStr;
+					this->path( path );
+					pathToString( path, pathStr );
+					IECore::msg(
+							IECore::Msg::Warning,
+							"AlembicScene::writeAttribute",
+							boost::str(
+								boost::format( "Cannot write attribute ( attribute name: '%1%', attribute type: '%2%', time: %3% ) at location '%4%'. " ) %
+									name.string() %
+									attribute->typeName() %
+									time %
+									pathStr
+							)
+						);
+
+				}
 			}
-
 		}
 
 
