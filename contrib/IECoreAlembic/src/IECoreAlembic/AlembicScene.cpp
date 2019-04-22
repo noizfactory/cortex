@@ -368,10 +368,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 			ICompoundProperty defaultProperties = m_xform.getProperties();
 				
-			if( !defaultProperties.valid() )
-			{
-			}
-			else
+			if( defaultProperties.valid() )
 			{
 				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
 
