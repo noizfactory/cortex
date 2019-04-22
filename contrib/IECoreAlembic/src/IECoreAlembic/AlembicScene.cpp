@@ -1794,10 +1794,8 @@ class AlembicScene::AlembicWriter : public AlembicIO
 
 			if ( name == "scene:visible" )
 			{
-				printf( "\nWriting visibility for %s", m_xform.getFullName().c_str() );
 				if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
 				{
-					printf( "\nScene visibility attribute %s", name.c_str() );
 					setProperty<OBoolProperty>( name, time, data );
 				}
 			}
