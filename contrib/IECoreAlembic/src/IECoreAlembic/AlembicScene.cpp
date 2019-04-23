@@ -1793,7 +1793,10 @@ class AlembicScene::AlembicWriter : public AlembicIO
 			{
 				if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
 				{
-					setProperty<OBoolProperty>( name, time, data );
+					int visibility = (int)data->readable();
+					IECore::CharData *visibility_data = new IECore::CharData(visibility);
+					printf ( "\nVisibility Value: %d", visibility );
+					setProperty<OCharProperty>( name, time, visibility_data );
 				}
 			}
 			else
