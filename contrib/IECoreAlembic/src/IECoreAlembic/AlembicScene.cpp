@@ -329,7 +329,8 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return false;
 			}
 
-			if ( name == "scene:visible" )
+			// Check for visibility property as it may not exist if the attribute was not exported.
+			if ( name == SceneInterface::visibilityName )
 			{
 				ICompoundProperty defaultProperties = m_xform.getProperties();
 				
@@ -338,23 +339,21 @@ class AlembicScene::AlembicReader : public AlembicIO
 					return false;
 				}
 
-				const AbcA::PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( "visible" );
+				const AbcA::PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( name.string() );
 
 				return propertyHeader != nullptr;
 			}
-			else
+			
+			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+			if( !userProperties.valid() )
 			{
-				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-				if( !userProperties.valid() )
-				{
-					return false;
-				}
-
-				const AbcA::PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
-
-				return propertyHeader != nullptr;
+				return false;
 			}
+
+			const AbcA::PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
+
+			return propertyHeader != nullptr;
 		}
 
 		void attributeNames( NameList &attrs ) const
@@ -366,28 +365,17 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return;
 			}
 
-			ICompoundProperty defaultProperties = m_xform.getProperties();
-				
-			if( defaultProperties.valid() )
-			{
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
-
-				if ( !propertyReader )
-				{
-					return;
-				}
-
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
-
-				if( !scalarPropertyReader )
-				{
-					return;
-				}
-				else
-				{
-					attrs.push_back( InternedString( "scene:visible" ) );
-				}
-			}
+			// printf( "\nChecking if visibility property exists" );
+			IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
+			AbcA::ObjectReaderPtr xformObjectReader = GetObjectReaderPtr( xformObject );
+			printf( "\nxform_object Type: %s", typeid( xformObjectReader ).name() );
+			// GetVisibilityProperty( xformObjectReader );
+			// printf( "\nChecking if visibility property is valid" );
+			// if ( visibilityProperty.valid() )
+			// {
+			// 	printf( "\nVisibility property: %s", visibilityProperty.getName().c_str() );
+			// 	attrs.push_back( InternedString( SceneInterface::visibilityName.string() ) );
+			// }
 
 			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
