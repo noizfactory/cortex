@@ -365,17 +365,12 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return;
 			}
 
-			// printf( "\nChecking if visibility property exists" );
 			IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
-			AbcA::ObjectReaderPtr xformObjectReader = GetObjectReaderPtr( xformObject );
-			printf( "\nxform_object Type: %s", typeid( xformObjectReader ).name() );
-			// GetVisibilityProperty( xformObjectReader );
-			// printf( "\nChecking if visibility property is valid" );
-			// if ( visibilityProperty.valid() )
-			// {
-			// 	printf( "\nVisibility property: %s", visibilityProperty.getName().c_str() );
-			// 	attrs.push_back( InternedString( SceneInterface::visibilityName.string() ) );
-			// }
+			IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
+			if ( visibilityProperty.valid() )
+			{
+				attrs.push_back( InternedString( SceneInterface::visibilityName.string() ) );
+			}
 
 			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
