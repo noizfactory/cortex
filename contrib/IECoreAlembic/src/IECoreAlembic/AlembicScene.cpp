@@ -332,18 +332,15 @@ class AlembicScene::AlembicReader : public AlembicIO
 			// Check for visibility property as it may not exist if the attribute was not exported.
 			if ( name == SceneInterface::visibilityName )
 			{
-				ICompoundProperty defaultProperties = m_xform.getProperties();
-				
-				if( !defaultProperties.valid() )
-				{
-					return false;
-				}
+				IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
 
-				const AbcA::PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( name.string() );
+				IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
+
+				const AbcA::PropertyHeader *propertyHeader = &visibilityProperty.getHeader();
 
 				return propertyHeader != nullptr;
 			}
-			
+
 			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
 
 			if( !userProperties.valid() )
@@ -366,8 +363,14 @@ class AlembicScene::AlembicReader : public AlembicIO
 			}
 
 			IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
+
 			IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
-			if ( visibilityProperty.valid() )
+
+			if ( !visibilityProperty.valid() )
+			{
+				return;
+			}
+			else
 			{
 				attrs.push_back( InternedString( SceneInterface::visibilityName.string() ) );
 			}
@@ -385,7 +388,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 			{
 				attrs.push_back( InternedString( userProperties.getPropertyHeader( i ).getName() ) );
 			}
-			
+
 		}
 
 		size_t numAttributeSamples( const Name &name ) const
@@ -395,56 +398,44 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0;
 			}
 
-			if ( name == "scene:visible" )
+			if ( name == SceneInterface::visibilityName )
 			{
-				ICompoundProperty defaultProperties = m_xform.getProperties();
-				
-				if( !defaultProperties.valid() )
+				IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
+
+				IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
+
+				if ( visibilityProperty.valid() )
+				{
+					return visibilityProperty.getNumSamples();
+				}
+				else
 				{
 					return 0;
 				}
-
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
-
-				if ( !propertyReader )
-				{
-					return 0;
-				}
-
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
-
-				if( !scalarPropertyReader )
-				{
-					return 0;
-				}
-
-				return scalarPropertyReader->getNumSamples();
 			}
-			else
+
+			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+			if ( !userProperties.valid() )
 			{
-				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-				if ( !userProperties.valid() )
-				{
-					return 0;
-				}
-
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
-
-				if ( !propertyReader )
-				{
-					return 0;
-				}
-
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
-
-				if( !scalarPropertyReader )
-				{
-					return 0;
-				}
-
-				return scalarPropertyReader->getNumSamples();
+				return 0;
 			}
+
+			AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+
+			if ( !propertyReader )
+			{
+				return 0;
+			}
+
+			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+			if( !scalarPropertyReader )
+			{
+				return 0;
+			}
+
+			return scalarPropertyReader->getNumSamples();
 		}
 
 		double attributeSampleTime( const Name &name, size_t sampleIndex ) const
@@ -454,56 +445,42 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
-			if ( name == "scene:visible" )
+			if ( name == SceneInterface::visibilityName )
 			{
-				ICompoundProperty defaultProperties = m_xform.getProperties();
-				
-				if( !defaultProperties.valid() )
+				IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
+
+				IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
+
+				if ( visibilityProperty.valid() )
 				{
-					return 0;
+					auto timeSampling = visibilityProperty.getTimeSampling();
+					return timeSampling->getSampleTime( sampleIndex );
 				}
-
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
-
-				if ( !propertyReader )
-				{
-					return 0;
-				}
-
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
-
-				if ( !scalarPropertyReader )
-				{
-					return 0;
-				}
-				auto timeSampling = scalarPropertyReader->getTimeSampling();
-				return timeSampling->getSampleTime( sampleIndex );
+				return 0;
 			}
-			else
+
+			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+			if ( !userProperties.valid() )
 			{
-				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-				if ( !userProperties.valid() )
-				{
-					return 0;
-				}
-
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
-
-				if ( !propertyReader )
-				{
-					return 0;
-				}
-
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
-
-				if ( !scalarPropertyReader )
-				{
-					return 0;
-				}
-				auto timeSampling = scalarPropertyReader->getTimeSampling();
-				return timeSampling->getSampleTime( sampleIndex );
+				return 0;
 			}
+
+			AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+
+			if ( !propertyReader )
+			{
+				return 0;
+			}
+
+			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+			if ( !scalarPropertyReader )
+			{
+				return 0;
+			}
+			auto timeSampling = scalarPropertyReader->getTimeSampling();
+			return timeSampling->getSampleTime( sampleIndex );
 		}
 
 		double attributeSampleInterval( const Name &name, double time, size_t &floorIndex, size_t &ceilIndex ) const
@@ -513,56 +490,41 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return 0.0;
 			}
 
-			if ( name == "scene:visible" )
+			if ( name == SceneInterface::visibilityName )
 			{
-				ICompoundProperty defaultProperties = m_xform.getProperties();
-				
-				if( !defaultProperties.valid() )
+				IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
+
+				IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
+
+				if ( visibilityProperty.valid() )
 				{
-					return 0;
+					return sampleInterval( visibilityProperty.getTimeSampling().get(), visibilityProperty.getNumSamples(), time, floorIndex, ceilIndex );
 				}
-
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
-
-				if ( !propertyReader )
-				{
-					return 0;
-				}
-
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
-
-				if ( !scalarPropertyReader )
-				{
-					return 0.0;
-				}
-
-				return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
+				return 0.0;
 			}
-			else
+
+			ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
+
+			if ( !userProperties.valid() )
 			{
-				ICompoundProperty userProperties = m_xform.getSchema().getUserProperties();
-
-				if ( !userProperties.valid() )
-				{
-					return 0;
-				}
-
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
-
-				if ( !propertyReader )
-				{
-					return 0.0;
-				}
-
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
-
-				if ( !scalarPropertyReader )
-				{
-					return 0.0;
-				}
-
-				return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
+				return 0.0;
 			}
+
+			AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+
+			if ( !propertyReader )
+			{
+				return 0.0;
+			}
+
+			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+			if ( !scalarPropertyReader )
+			{
+				return 0.0;
+			}
+
+			return sampleInterval( scalarPropertyReader->getTimeSampling().get(), scalarPropertyReader->getNumSamples(), time, floorIndex, ceilIndex );
 		}
 
 		IECore::ConstObjectPtr readAttributeAtSample( const Name &name, size_t sampleIndex ) const
@@ -572,488 +534,433 @@ class AlembicScene::AlembicReader : public AlembicIO
 				return nullptr;
 			}
 
-			// CompoundPropertyReaderPtr propertyReader = NULL;
-			// ScalarPropertyReaderPtr scalarPropertyReader = NULL;
-
-			if ( name == "scene:visible" )
+			if ( name == SceneInterface::visibilityName )
 			{
-				auto defaultProperties = m_xform.getProperties();
+				IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
 
-				const PropertyHeader *propertyHeader = defaultProperties.getPropertyHeader( "visible" );
-				if( !propertyHeader )
-				{
-					return nullptr;
-				}
+				ObjectVisibility visibility = GetVisibility( xformObject, sampleIndex );
 
-				if( propertyHeader->getPropertyType() != kScalarProperty )
-				{
-					IECore::msg(
-						IECore::Msg::Warning,
-						"AlembicScene::readAttributeAtSample",
-						boost::format( "Unsupported property type :%1%. Only scalar properties are currently supported: %2%" ) %
-							propertyHeader->getPropertyType() %
-							kScalarProperty
-					);
-				}
-
-				CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
-
-				if ( !scalarPropertyReader )
-				{
-					IECore::msg(
-						IECore::Msg::Warning,
-						"AlembicScene::readAttributeAtSample",
-						boost::format( "Unable to read scalar property '%1%'" ) % name
-					);
-
-					return nullptr;
-				}
-
-				const DataType dataType = scalarPropertyReader->getDataType();
-				const PlainOldDataType pod = dataType.getPod();
-				const uint8_t extent = dataType.getExtent();
-				const MetaData &metaData = scalarPropertyReader->getMetaData();
-
-				auto getInterpretation = [ &metaData ]() -> std::string
-				{
-					std::string interpretation = metaData.get( "interpretation" );
-					return interpretation;
-				};
-
-				int8_t visible;
-				scalarPropertyReader->getSample( sampleIndex, &visible );
-				if (visible == -1)
-				{
-					visible = 1;
-					return new IECore::BoolData( true );
-				}
-				else
+				if ( visibility == 0 )
 				{
 					return new IECore::BoolData( false );
 				}
+				else
+				{
+					return new IECore::BoolData( true );
+				}
+				return nullptr;
+			}
 
+			const IXformSchema &schema = m_xform.getSchema();
+			auto userProperties = schema.getUserProperties();
+
+			const PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
+			if( !propertyHeader )
+			{
+				return nullptr;
+			}
+
+			if( propertyHeader->getPropertyType() != kScalarProperty )
+			{
 				IECore::msg(
 					IECore::Msg::Warning,
 					"AlembicScene::readAttributeAtSample",
-					boost::format( "Unsupported attribute type datatype: \"%1%\" extend:%2% interpretation:\"%3%\"" ) % pod % extent % getInterpretation()
+					boost::format( "Unsupported property type :%1%. Only scalar properties are currently supported: %2%" ) %
+						propertyHeader->getPropertyType() %
+						kScalarProperty
+				);
+			}
+
+			CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
+			ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
+
+			if ( !scalarPropertyReader )
+			{
+				IECore::msg(
+					IECore::Msg::Warning,
+					"AlembicScene::readAttributeAtSample",
+					boost::format( "Unable to read scalar property '%1%'" ) % name
 				);
 
 				return nullptr;
 			}
-			else
+
+			const DataType dataType = scalarPropertyReader->getDataType();
+			const PlainOldDataType pod = dataType.getPod();
+			const uint8_t extent = dataType.getExtent();
+			const MetaData &metaData = scalarPropertyReader->getMetaData();
+
+			auto getInterpretation = [ &metaData ]() -> std::string
 			{
-				const IXformSchema &schema = m_xform.getSchema();
-				auto userProperties = schema.getUserProperties();
+				std::string interpretation = metaData.get( "interpretation" );
+				return interpretation;
+			};
 
-				const PropertyHeader *propertyHeader = userProperties.getPropertyHeader( name.string() );
-				if( !propertyHeader )
+			auto getCortexInterpretation = [ &metaData ] () -> GeometricData::Interpretation
+			{
+				std::string interpretation = metaData.get( "interpretation" );
+				return convertInterpretation( interpretation );
+			};
+
+			switch( pod )
+			{
+				case kBooleanPOD:
 				{
-					return nullptr;
+					bool_t value;
+					scalarPropertyReader->getSample( sampleIndex, &value);
+					return new IECore::BoolData( value );
 				}
-
-				if( propertyHeader->getPropertyType() != kScalarProperty )
+				case kUint8POD:
 				{
-					IECore::msg(
-						IECore::Msg::Warning,
-						"AlembicScene::readAttributeAtSample",
-						boost::format( "Unsupported property type :%1%. Only scalar properties are currently supported: %2%" ) %
-							propertyHeader->getPropertyType() %
-							kScalarProperty
-					);
+					if( extent == 1 )
+					{
+						uint8_t tmpUChar;
+						scalarPropertyReader->getSample( sampleIndex, &tmpUChar );
+						return new IECore::UCharData( tmpUChar );
+					}
+					if( extent == 3 && getInterpretation() == "rgb" )
+					{
+						uint8_t value[3];
+						scalarPropertyReader->getSample( sampleIndex, &value );
+						return new IECore::Color3fData( C3f( value[0] / 255.0f, value[1] / 255.0f, value[2] / 255.0f ) );
+					}
+					else if( extent == 4 && getInterpretation() == "rgba" )
+					{
+						uint8_t value[4];
+						scalarPropertyReader->getSample( sampleIndex, &value );
+						return new IECore::Color4fData( C4f( value[0] / 255.0f, value[1] / 255.0f, value[2] / 255.0f, value[3] / 255.0f ) );
+					}
 				}
-
-				CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( userProperties );
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( name.string() );
-
-				if ( !scalarPropertyReader )
+				case kInt8POD:
 				{
-					IECore::msg(
-						IECore::Msg::Warning,
-						"AlembicScene::readAttributeAtSample",
-						boost::format( "Unable to read scalar property '%1%'" ) % name
-					);
-
-					return nullptr;
+					int8_t tmpChar;
+					scalarPropertyReader->getSample( sampleIndex, &tmpChar );
+					return new IECore::CharData( tmpChar );
 				}
-
-				const DataType dataType = scalarPropertyReader->getDataType();
-				const PlainOldDataType pod = dataType.getPod();
-				const uint8_t extent = dataType.getExtent();
-				const MetaData &metaData = scalarPropertyReader->getMetaData();
-
-				auto getInterpretation = [ &metaData ]() -> std::string
+				case kUint16POD:
 				{
-					std::string interpretation = metaData.get( "interpretation" );
-					return interpretation;
-				};
-
-				auto getCortexInterpretation = [ &metaData ] () -> GeometricData::Interpretation
+					uint16_t value;
+					scalarPropertyReader->getSample( sampleIndex, &value );
+					return new IECore::UShortData( value );
+				}
+				case kInt16POD:
 				{
-					std::string interpretation = metaData.get( "interpretation" );
-					return convertInterpretation( interpretation );
-				};
-
-				switch( pod )
+					switch( extent )
+					{
+						case 1:
+						{
+							int16_t value;
+							scalarPropertyReader->getSample( sampleIndex, &value );
+							return new IECore::ShortData( value );
+						}
+						case 2:
+						{
+							int16_t value[2];
+							scalarPropertyReader->getSample( sampleIndex, &value );
+							return new IECore::V2iData( V2i( value[0], value[1] ), getCortexInterpretation() );
+						}
+						case 3:
+						{
+							int16_t value[3];
+							scalarPropertyReader->getSample( sampleIndex, &value );
+							return new IECore::V3iData( V3i( value[0], value[1], value[2] ), getCortexInterpretation() );
+						}
+						case 4:
+						{
+							int16_t value[4];
+							scalarPropertyReader->getSample( sampleIndex, &value[0] );
+							return new IECore::Box2iData( Box2i( V2i( value[0], value[1] ), V2i( value[2], value[3] ) ) );
+						}
+						case 6:
+						{
+							int16_t value[6];
+							scalarPropertyReader->getSample( sampleIndex, &value[0] );
+							return new IECore::Box3iData( Box3i( V3i( value[0], value[1], value[2] ), V3i( value[3], value[4], value[5] ) ) );
+						}
+						default:
+							break;
+					}
+				}
+				case kUint32POD:
 				{
-					case kBooleanPOD:
+					uint32_t value;
+					scalarPropertyReader->getSample( sampleIndex, &value );
+					return new IECore::UIntData( value );
+				}
+				case kInt32POD:
+				{
+					switch( extent )
 					{
-						bool_t value;
-						scalarPropertyReader->getSample( sampleIndex, &value);
-						return new IECore::BoolData( value );
-					}
-					case kUint8POD:
-					{
-						if( extent == 1 )
+						case 1:
 						{
-							uint8_t tmpUChar;
-							scalarPropertyReader->getSample( sampleIndex, &tmpUChar );
-							return new IECore::UCharData( tmpUChar );
-						}
-						if( extent == 3 && getInterpretation() == "rgb" )
-						{
-							uint8_t value[3];
+							int32_t value;
 							scalarPropertyReader->getSample( sampleIndex, &value );
-							return new IECore::Color3fData( C3f( value[0] / 255.0f, value[1] / 255.0f, value[2] / 255.0f ) );
+							return new IECore::IntData( value );
 						}
-						else if( extent == 4 && getInterpretation() == "rgba" )
+						case 2:
 						{
-							uint8_t value[4];
+							int32_t value[2];
+							scalarPropertyReader->getSample( sampleIndex, &value[0] );
+							return new IECore::V2iData( V2i( value[0], value[1] ), getCortexInterpretation() );
+						}
+						case 3:
+						{
+							int32_t value[3];
+							scalarPropertyReader->getSample( sampleIndex, &value[0] );
+							return new IECore::V3iData( V3i( value[0], value[1], value[2] ), getCortexInterpretation() );
+						}
+						case 4:
+						{
+							int32_t tmpValue[4];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::Box2iData( Box2i( V2i( tmpValue[0], tmpValue[1] ), V2i( tmpValue[2], tmpValue[3] ) ) );
+						}
+						case 6:
+						{
+							int32_t tmpValue[6];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::Box3iData( Box3i( V3i( tmpValue[0], tmpValue[1], tmpValue[2] ), V3i( tmpValue[3], tmpValue[4], tmpValue[5] ) ) );
+						}
+						default:
+							break;
+					}
+				}
+				case kUint64POD:
+				{
+					uint64_t value;
+					scalarPropertyReader->getSample( sampleIndex, &value );
+					return new IECore::UInt64Data( value );
+				}
+				case kInt64POD:
+				{
+					int64_t value;
+					scalarPropertyReader->getSample( sampleIndex, &value );
+					return new IECore::Int64Data( value );
+				}
+				case kFloat16POD:
+				{
+					if( extent == 1 )
+					{
+						half value;
+						scalarPropertyReader->getSample( sampleIndex, &value );
+						return new IECore::HalfData( value );
+					}
+					else if( extent == 3 )
+					{
+						half value[3];
+						scalarPropertyReader->getSample( sampleIndex, &value );
+						if( getInterpretation() == "rgb" )
+						{
+							return new IECore::Color3fData( C3f( value[0], value[1], value[2] ) );
+						}
+					}
+					else if( extent == 4 )
+					{
+						half value[4];
+						scalarPropertyReader->getSample( sampleIndex, &value );
+						if( getInterpretation() == "rgba" )
+						{
+							return new IECore::Color4fData( C4f( value[0], value[1], value[2], value[3] ) );
+						}
+					}
+				}
+				case kFloat32POD:
+				{
+					switch( extent )
+					{
+						case 1:
+						{
+							float32_t value;
 							scalarPropertyReader->getSample( sampleIndex, &value );
-							return new IECore::Color4fData( C4f( value[0] / 255.0f, value[1] / 255.0f, value[2] / 255.0f, value[3] / 255.0f ) );
+							return new IECore::FloatData( value );
 						}
-					}
-					case kInt8POD:
-					{
-						int8_t tmpChar;
-						scalarPropertyReader->getSample( sampleIndex, &tmpChar );
-						return new IECore::CharData( tmpChar );
-					}
-					case kUint16POD:
-					{
-						uint16_t value;
-						scalarPropertyReader->getSample( sampleIndex, &value );
-						return new IECore::UShortData( value );
-					}
-					case kInt16POD:
-					{
-						switch( extent )
+						case 2:
 						{
-							case 1:
-							{
-								int16_t value;
-								scalarPropertyReader->getSample( sampleIndex, &value );
-								return new IECore::ShortData( value );
-							}
-							case 2:
-							{
-								int16_t value[2];
-								scalarPropertyReader->getSample( sampleIndex, &value );
-								return new IECore::V2iData( V2i( value[0], value[1] ), getCortexInterpretation() );
-							}
-							case 3:
-							{
-								int16_t value[3];
-								scalarPropertyReader->getSample( sampleIndex, &value );
-								return new IECore::V3iData( V3i( value[0], value[1], value[2] ), getCortexInterpretation() );
-							}
-							case 4:
-							{
-								int16_t value[4];
-								scalarPropertyReader->getSample( sampleIndex, &value[0] );
-								return new IECore::Box2iData( Box2i( V2i( value[0], value[1] ), V2i( value[2], value[3] ) ) );
-							}
-							case 6:
-							{
-								int16_t value[6];
-								scalarPropertyReader->getSample( sampleIndex, &value[0] );
-								return new IECore::Box3iData( Box3i( V3i( value[0], value[1], value[2] ), V3i( value[3], value[4], value[5] ) ) );
-							}
-							default:
-								break;
+							float32_t value[2];
+							scalarPropertyReader->getSample( sampleIndex, &value[0] );
+							return new IECore::V2fData( V2f( value[0], value[1] ), getCortexInterpretation() );
 						}
-					}
-					case kUint32POD:
-					{
-						uint32_t value;
-						scalarPropertyReader->getSample( sampleIndex, &value );
-						return new IECore::UIntData( value );
-					}
-					case kInt32POD:
-					{
-						switch( extent )
+						case 3:
 						{
-							case 1:
+							float32_t value[3];
+							scalarPropertyReader->getSample( sampleIndex, &value[0] );
+
+							if( getCortexInterpretation() != GeometricData::Interpretation::None )
 							{
-								int32_t value;
-								scalarPropertyReader->getSample( sampleIndex, &value );
-								return new IECore::IntData( value );
+								return new IECore::V3fData( V3f( value[0], value[1], value[2] ), getCortexInterpretation()  );
 							}
-							case 2:
-							{
-								int32_t value[2];
-								scalarPropertyReader->getSample( sampleIndex, &value[0] );
-								return new IECore::V2iData( V2i( value[0], value[1] ), getCortexInterpretation() );
-							}
-							case 3:
-							{
-								int32_t value[3];
-								scalarPropertyReader->getSample( sampleIndex, &value[0] );
-								return new IECore::V3iData( V3i( value[0], value[1], value[2] ), getCortexInterpretation() );
-							}
-							case 4:
-							{
-								int32_t tmpValue[4];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::Box2iData( Box2i( V2i( tmpValue[0], tmpValue[1] ), V2i( tmpValue[2], tmpValue[3] ) ) );
-							}
-							case 6:
-							{
-								int32_t tmpValue[6];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::Box3iData( Box3i( V3i( tmpValue[0], tmpValue[1], tmpValue[2] ), V3i( tmpValue[3], tmpValue[4], tmpValue[5] ) ) );
-							}
-							default:
-								break;
-						}
-					}
-					case kUint64POD:
-					{
-						uint64_t value;
-						scalarPropertyReader->getSample( sampleIndex, &value );
-						return new IECore::UInt64Data( value );
-					}
-					case kInt64POD:
-					{
-						int64_t value;
-						scalarPropertyReader->getSample( sampleIndex, &value );
-						return new IECore::Int64Data( value );
-					}
-					case kFloat16POD:
-					{
-						if( extent == 1 )
-						{
-							half value;
-							scalarPropertyReader->getSample( sampleIndex, &value );
-							return new IECore::HalfData( value );
-						}
-						else if( extent == 3 )
-						{
-							half value[3];
-							scalarPropertyReader->getSample( sampleIndex, &value );
-							if( getInterpretation() == "rgb" )
+							else if( getInterpretation() == "rgb" )
 							{
 								return new IECore::Color3fData( C3f( value[0], value[1], value[2] ) );
 							}
 						}
-						else if( extent == 4 )
+						case 4:
 						{
-							half value[4];
+							float32_t tmpValue[4];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+
+							if( getInterpretation() == "quat" )
+							{
+								return new IECore::QuatfData( Quatf( tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3] ) );
+							}
+							else if( getInterpretation() == "box" )
+							{
+								return new IECore::Box2fData( Box2f( V2f( tmpValue[0], tmpValue[1] ), V2f( tmpValue[2], tmpValue[3] ) ) );
+							}
+							else if( getInterpretation() == "rgba" )
+							{
+								return new IECore::Color4fData( C4f( tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3] ) );
+							}
+						}
+						case 6:
+						{
+							float32_t tmpValue[6];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::Box3fData( Box3f( V3d( tmpValue[0], tmpValue[1], tmpValue[2] ), V3f( tmpValue[3], tmpValue[4], tmpValue[5] ) ) );
+						}
+						case 9:
+						{
+							float32_t tmpValue[9];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::M33fData(
+								M33f(
+									tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3], tmpValue[4], tmpValue[5], tmpValue[6], tmpValue[7], tmpValue[8]
+								)
+							);
+						}
+						case 16:
+						{
+							float32_t tmpValue[16];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::M44fData(
+								M44f(
+									tmpValue[0],
+									tmpValue[1],
+									tmpValue[2],
+									tmpValue[3],
+									tmpValue[4],
+									tmpValue[5],
+									tmpValue[6],
+									tmpValue[7],
+									tmpValue[8],
+									tmpValue[9],
+									tmpValue[10],
+									tmpValue[11],
+									tmpValue[12],
+									tmpValue[13],
+									tmpValue[14],
+									tmpValue[15]
+								)
+							);
+						}
+						default:
+							break;
+					}
+				}
+				case kFloat64POD:
+				{
+					switch( extent )
+					{
+						case 1:
+						{
+							float64_t value;
 							scalarPropertyReader->getSample( sampleIndex, &value );
-							if( getInterpretation() == "rgba" )
-							{
-								return new IECore::Color4fData( C4f( value[0], value[1], value[2], value[3] ) );
-							}
+							return new IECore::DoubleData( value );
 						}
-					}
-					case kFloat32POD:
-					{
-						switch( extent )
+						case 2:
 						{
-							case 1:
-							{
-								float32_t value;
-								scalarPropertyReader->getSample( sampleIndex, &value );
-								return new IECore::FloatData( value );
-							}
-							case 2:
-							{
-								float32_t value[2];
-								scalarPropertyReader->getSample( sampleIndex, &value[0] );
-								return new IECore::V2fData( V2f( value[0], value[1] ), getCortexInterpretation() );
-							}
-							case 3:
-							{
-								float32_t value[3];
-								scalarPropertyReader->getSample( sampleIndex, &value[0] );
-
-								if( getCortexInterpretation() != GeometricData::Interpretation::None )
-								{
-									return new IECore::V3fData( V3f( value[0], value[1], value[2] ), getCortexInterpretation()  );
-								}
-								else if( getInterpretation() == "rgb" )
-								{
-									return new IECore::Color3fData( C3f( value[0], value[1], value[2] ) );
-								}
-							}
-							case 4:
-							{
-								float32_t tmpValue[4];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-
-								if( getInterpretation() == "quat" )
-								{
-									return new IECore::QuatfData( Quatf( tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3] ) );
-								}
-								else if( getInterpretation() == "box" )
-								{
-									return new IECore::Box2fData( Box2f( V2f( tmpValue[0], tmpValue[1] ), V2f( tmpValue[2], tmpValue[3] ) ) );
-								}
-								else if( getInterpretation() == "rgba" )
-								{
-									return new IECore::Color4fData( C4f( tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3] ) );
-								}
-							}
-							case 6:
-							{
-								float32_t tmpValue[6];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::Box3fData( Box3f( V3d( tmpValue[0], tmpValue[1], tmpValue[2] ), V3f( tmpValue[3], tmpValue[4], tmpValue[5] ) ) );
-							}
-							case 9:
-							{
-								float32_t tmpValue[9];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::M33fData(
-									M33f(
-										tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3], tmpValue[4], tmpValue[5], tmpValue[6], tmpValue[7], tmpValue[8]
-									)
-								);
-							}
-							case 16:
-							{
-								float32_t tmpValue[16];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::M44fData(
-									M44f(
-										tmpValue[0],
-										tmpValue[1],
-										tmpValue[2],
-										tmpValue[3],
-										tmpValue[4],
-										tmpValue[5],
-										tmpValue[6],
-										tmpValue[7],
-										tmpValue[8],
-										tmpValue[9],
-										tmpValue[10],
-										tmpValue[11],
-										tmpValue[12],
-										tmpValue[13],
-										tmpValue[14],
-										tmpValue[15]
-									)
-								);
-							}
-							default:
-								break;
+							float64_t tmpValue[2];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::V2dData( V2d( tmpValue[0], tmpValue[1] ), getCortexInterpretation() );
 						}
-					}
-					case kFloat64POD:
-					{
-						switch( extent )
+						case 3:
 						{
-							case 1:
-							{
-								float64_t value;
-								scalarPropertyReader->getSample( sampleIndex, &value );
-								return new IECore::DoubleData( value );
-							}
-							case 2:
-							{
-								float64_t tmpValue[2];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::V2dData( V2d( tmpValue[0], tmpValue[1] ), getCortexInterpretation() );
-							}
-							case 3:
-							{
-								float64_t tmpValue[3];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::V3dData( V3d( tmpValue[0], tmpValue[1], tmpValue[2] ), getCortexInterpretation() );
-							}
-							case 4:
-							{
-								float64_t tmpValue[4];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								if( getInterpretation() == "quat" )
-								{
-									return new IECore::QuatdData( Quatd( tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3] ) );
-								}
-								else if( getInterpretation() == "box" )
-								{
-									return new IECore::Box2dData( Box2d( V2d( tmpValue[0], tmpValue[1] ), V2d( tmpValue[2], tmpValue[3] ) ) );
-								}
-							}
-							case 6:
-							{
-								float64_t tmpValue[6];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::Box3dData( Box3d( V3d( tmpValue[0], tmpValue[1], tmpValue[2] ), V3d( tmpValue[3], tmpValue[4], tmpValue[5] ) ) );
-							}
-							case 9:
-							{
-								float64_t tmpValue[9];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::M33dData(
-									M33d(
-										tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3], tmpValue[4], tmpValue[5], tmpValue[6], tmpValue[7], tmpValue[8]
-									)
-								);
-							}
-							case 16:
-							{
-								float64_t tmpValue[16];
-								scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
-								return new IECore::M44dData(
-									M44d(
-										tmpValue[0],
-										tmpValue[1],
-										tmpValue[2],
-										tmpValue[3],
-										tmpValue[4],
-										tmpValue[5],
-										tmpValue[6],
-										tmpValue[7],
-										tmpValue[8],
-										tmpValue[9],
-										tmpValue[10],
-										tmpValue[11],
-										tmpValue[12],
-										tmpValue[13],
-										tmpValue[14],
-										tmpValue[15]
-									)
-								);
-							}
-							default:
-								break;
+							float64_t tmpValue[3];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::V3dData( V3d( tmpValue[0], tmpValue[1], tmpValue[2] ), getCortexInterpretation() );
 						}
-
+						case 4:
+						{
+							float64_t tmpValue[4];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							if( getInterpretation() == "quat" )
+							{
+								return new IECore::QuatdData( Quatd( tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3] ) );
+							}
+							else if( getInterpretation() == "box" )
+							{
+								return new IECore::Box2dData( Box2d( V2d( tmpValue[0], tmpValue[1] ), V2d( tmpValue[2], tmpValue[3] ) ) );
+							}
+						}
+						case 6:
+						{
+							float64_t tmpValue[6];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::Box3dData( Box3d( V3d( tmpValue[0], tmpValue[1], tmpValue[2] ), V3d( tmpValue[3], tmpValue[4], tmpValue[5] ) ) );
+						}
+						case 9:
+						{
+							float64_t tmpValue[9];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::M33dData(
+								M33d(
+									tmpValue[0], tmpValue[1], tmpValue[2], tmpValue[3], tmpValue[4], tmpValue[5], tmpValue[6], tmpValue[7], tmpValue[8]
+								)
+							);
+						}
+						case 16:
+						{
+							float64_t tmpValue[16];
+							scalarPropertyReader->getSample( sampleIndex, &tmpValue[0] );
+							return new IECore::M44dData(
+								M44d(
+									tmpValue[0],
+									tmpValue[1],
+									tmpValue[2],
+									tmpValue[3],
+									tmpValue[4],
+									tmpValue[5],
+									tmpValue[6],
+									tmpValue[7],
+									tmpValue[8],
+									tmpValue[9],
+									tmpValue[10],
+									tmpValue[11],
+									tmpValue[12],
+									tmpValue[13],
+									tmpValue[14],
+									tmpValue[15]
+								)
+							);
+						}
+						default:
+							break;
 					}
-
-					case kStringPOD:
-					{
-						std::string tmpStr;
-						scalarPropertyReader->getSample( sampleIndex, &tmpStr );
-
-						return new IECore::StringData( tmpStr );
-					}
-
-					case kWstringPOD:
-					case kUnknownPOD:
-					default:
-						break;
 
 				}
 
-				IECore::msg(
-					IECore::Msg::Warning,
-					"AlembicScene::readAttributeAtSample",
-					boost::format( "Unsupported attribute type datatype: \"%1%\" extend:%2% interpretation:\"%3%\"" ) % pod % extent % getInterpretation()
-				);
+				case kStringPOD:
+				{
+					std::string tmpStr;
+					scalarPropertyReader->getSample( sampleIndex, &tmpStr );
 
-				return nullptr;
+					return new IECore::StringData( tmpStr );
+				}
+
+				case kWstringPOD:
+				case kUnknownPOD:
+				default:
+					break;
+
 			}
+
+			IECore::msg(
+				IECore::Msg::Warning,
+				"AlembicScene::readAttributeAtSample",
+				boost::format( "Unsupported attribute type datatype: \"%1%\" extend:%2% interpretation:\"%3%\"" ) % pod % extent % getInterpretation()
+			);
+
+			return nullptr;
 		}
 
 		void attributeHash( double time, IECore::MurmurHash &h ) const
@@ -1077,24 +984,17 @@ class AlembicScene::AlembicReader : public AlembicIO
 				}
 			}
 
-			ICompoundProperty defaultProperties = m_xform.getProperties();				
-			if( defaultProperties.valid() )
-			{
-				AbcA::CompoundPropertyReaderPtr propertyReader = GetCompoundPropertyReaderPtr( defaultProperties );
-				ScalarPropertyReaderPtr scalarPropertyReader = propertyReader->getScalarProperty( "visible" );
-				if( !scalarPropertyReader )
-				{
-					return;
-				}
-				else
-				{
-					h.append( fileName() );
-					h.append( m_xform ? m_xform.getFullName() : "/" );
+			IObject xformObject = IObject( m_xform.getParent(), m_xform.getName() );
+			IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
 
-					if ( !scalarPropertyReader->isConstant() )
-					{
-						h.append( time );
-					}
+			if ( visibilityProperty.valid() )
+			{
+				h.append( fileName() );
+				h.append( m_xform ? m_xform.getFullName() : "/" );
+
+				if ( !visibilityProperty.isConstant() )
+				{
+					h.append( time );
 				}
 			}
 		}
@@ -1737,24 +1637,13 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
-			if ( name == "scene:visible" )
-			{
-				T prop( m_xform.getProperties(), "visible" );
+			OXformSchema &schema = m_xform.getSchema();
 
-				m_scalarProperties.insert( std::make_pair( name, prop ) );
+			T prop( schema.getUserProperties(), name );
 
-				prop.set( data->readable() );
-			}
-			else
-			{
-				OXformSchema &schema = m_xform.getSchema();
+			m_scalarProperties.insert( std::make_pair( name, prop ) );
 
-				T prop( schema.getUserProperties(), name );
-
-				m_scalarProperties.insert( std::make_pair( name, prop ) );
-
-				prop.set( data->readable() );
-			}
+			prop.set( data->readable() );
 		}
 
 		void writeAttribute( const Name &name, const IECore::Object *attribute, double time )
@@ -1772,229 +1661,230 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
-			if ( name == "scene:visible" )
-			{
-				if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
-				{
-					int visibility = (int)data->readable();
-					IECore::CharData *visibility_data = new IECore::CharData(visibility);
-					printf ( "\nVisibility Value: %d", visibility );
-					setProperty<OCharProperty>( name, time, visibility_data );
-				}
-			}
-			else
-			{			
-				if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
-				{
-					setProperty<OBoolProperty>( name, time, data );
-				}
-				else if( const IECore::UCharData *data = runTimeCast<const IECore::UCharData>( attribute ) )
-				{
-					setProperty<OUcharProperty>( name, time, data );
-				}
-				else if( const IECore::CharData *data = runTimeCast<const IECore::CharData>( attribute ) )
-				{
-					setProperty<OCharProperty>( name, time, data );
-				}
-				else if( const IECore::UShortData *data = runTimeCast<const IECore::UShortData>( attribute ) )
-				{
-					setProperty<OUInt16Property>( name, time, data );
-				}
-				else if( const IECore::ShortData *data = runTimeCast<const IECore::ShortData>( attribute ) )
-				{
-					setProperty<OInt16Property>( name, time, data );
-				}
-				else if( const IECore::UIntData *data = runTimeCast<const IECore::UIntData>( attribute ) )
-				{
-					setProperty<OUInt32Property>( name, time, data );
-				}
-				else if( const IECore::IntData *data = runTimeCast<const IECore::IntData>( attribute ) )
-				{
-					setProperty<OInt32Property>( name, time, data );
-				}
-				else if( const IECore::UInt64Data *data = runTimeCast<const IECore::UInt64Data>( attribute ) )
-				{
-					setProperty<OUInt64Property>( name, time, data );
-				}
-				else if( const IECore::Int64Data *data = runTimeCast<const IECore::Int64Data>( attribute ) )
-				{
-					setProperty<OInt64Property>( name, time, data );
-				}
-				else if( const IECore::HalfData *data = runTimeCast<const IECore::HalfData>( attribute ) )
-				{
-					setProperty<OHalfProperty>( name, time, data );
-				}
-				else if( const IECore::FloatData *data = runTimeCast<const IECore::FloatData>( attribute ) )
-				{
-					setProperty<OFloatProperty>( name, time, data );
-				}
-				else if( const IECore::DoubleData *data = runTimeCast<const IECore::DoubleData>( attribute ) )
-				{
-					setProperty<ODoubleProperty>( name, time, data );
-				}
-				else if( const IECore::StringData *data = runTimeCast<const IECore::StringData>( attribute ) )
-				{
-					setProperty<OStringProperty>( name, time, data );
-				}
-				else if( const IECore::V2iData *data = runTimeCast<const IECore::V2iData>( attribute ) )
-				{
-					if( data->getInterpretation() == GeometricData::Interpretation::Point )
-					{
-						setProperty<OP2iProperty>( name, time, data );
-					}
-					else
-					{
-						setProperty<OV2iProperty>( name, time, data );
-					}
-				}
-				else if( const IECore::V2fData *data = runTimeCast<const IECore::V2fData>( attribute ) )
-				{
-					if( data->getInterpretation() == GeometricData::Interpretation::Point )
-					{
-						setProperty<OP2fProperty>( name, time, data );
-					}
-					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-					{
-						setProperty<ON2fProperty>( name, time, data );
-					}
-					else
-					{
-						setProperty<OV2fProperty>( name, time, data );
-					}
-				}
-				else if( const IECore::V2dData *data = runTimeCast<const IECore::V2dData>( attribute ) )
-				{
-					if( data->getInterpretation() == GeometricData::Interpretation::Point )
-					{
-						setProperty<OP2dProperty>( name, time, data );
-					}
-					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-					{
-						setProperty<ON2dProperty>( name, time, data );
-					}
-					else
-					{
-						setProperty<OV2dProperty>( name, time, data );
-					}
-				}
-				else if( const IECore::V3iData *data = runTimeCast<const IECore::V3iData>( attribute ) )
-				{
-					if( data->getInterpretation() == GeometricData::Interpretation::Point )
-					{
-						setProperty<OP3iProperty>( name, time, data );
-					}
-					else
-					{
-						setProperty<OV3iProperty>( name, time, data );
-					}
-				}
-				else if( const IECore::V3fData *data = runTimeCast<const IECore::V3fData>( attribute ) )
-				{
-					if( data->getInterpretation() == GeometricData::Interpretation::Point )
-					{
-						setProperty<OP3fProperty>( name, time, data );
-					}
-					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-					{
-						setProperty<ON3fProperty>( name, time, data );
-					}
-					else
-					{
-						setProperty<OV3fProperty>( name, time, data );
-					}
-				}
-				else if( const IECore::V3dData *data = runTimeCast<const IECore::V3dData>( attribute ) )
-				{
+			// if ( name == SceneInterface::visibilityName )
+			// {
+			// 	if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
+			// 	{
+			// 		printf( "\nWriting visibility for %s", m_xform.getName().c_str() );
 
-					if( data->getInterpretation() == GeometricData::Interpretation::Point )
-					{
-						setProperty<OP3dProperty>( name, time, data );
-					}
-					else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
-					{
-						setProperty<ON3dProperty>( name, time, data );
-					}
-					else
-					{
-						setProperty<OV3dProperty>( name, time, data );
-					}
-				}
-				else if( const IECore::Box2iData *data = runTimeCast<const IECore::Box2iData>( attribute ) )
+			// 		OCompoundProperty defaultProperties = m_xform.getProperties();
+			// 		OScalarProperty visibilityProperty = defaultProperties.getProperty(kVisibilityPropertyName);
+			// 		visibilityProperty.setValue( time, data->readable() );
+			// 	}
+			// 	return;
+			// }
+
+			if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
+			{
+				setProperty<OBoolProperty>( name, time, data );
+			}
+			else if( const IECore::UCharData *data = runTimeCast<const IECore::UCharData>( attribute ) )
+			{
+				setProperty<OUcharProperty>( name, time, data );
+			}
+			else if( const IECore::CharData *data = runTimeCast<const IECore::CharData>( attribute ) )
+			{
+				setProperty<OCharProperty>( name, time, data );
+			}
+			else if( const IECore::UShortData *data = runTimeCast<const IECore::UShortData>( attribute ) )
+			{
+				setProperty<OUInt16Property>( name, time, data );
+			}
+			else if( const IECore::ShortData *data = runTimeCast<const IECore::ShortData>( attribute ) )
+			{
+				setProperty<OInt16Property>( name, time, data );
+			}
+			else if( const IECore::UIntData *data = runTimeCast<const IECore::UIntData>( attribute ) )
+			{
+				setProperty<OUInt32Property>( name, time, data );
+			}
+			else if( const IECore::IntData *data = runTimeCast<const IECore::IntData>( attribute ) )
+			{
+				setProperty<OInt32Property>( name, time, data );
+			}
+			else if( const IECore::UInt64Data *data = runTimeCast<const IECore::UInt64Data>( attribute ) )
+			{
+				setProperty<OUInt64Property>( name, time, data );
+			}
+			else if( const IECore::Int64Data *data = runTimeCast<const IECore::Int64Data>( attribute ) )
+			{
+				setProperty<OInt64Property>( name, time, data );
+			}
+			else if( const IECore::HalfData *data = runTimeCast<const IECore::HalfData>( attribute ) )
+			{
+				setProperty<OHalfProperty>( name, time, data );
+			}
+			else if( const IECore::FloatData *data = runTimeCast<const IECore::FloatData>( attribute ) )
+			{
+				setProperty<OFloatProperty>( name, time, data );
+			}
+			else if( const IECore::DoubleData *data = runTimeCast<const IECore::DoubleData>( attribute ) )
+			{
+				setProperty<ODoubleProperty>( name, time, data );
+			}
+			else if( const IECore::StringData *data = runTimeCast<const IECore::StringData>( attribute ) )
+			{
+				setProperty<OStringProperty>( name, time, data );
+			}
+			else if( const IECore::V2iData *data = runTimeCast<const IECore::V2iData>( attribute ) )
+			{
+				if( data->getInterpretation() == GeometricData::Interpretation::Point )
 				{
-					setProperty<OBox2iProperty>( name, time, data );
-				}
-				else if( const IECore::Box2fData *data = runTimeCast<const IECore::Box2fData>( attribute ) )
-				{
-					setProperty<OBox2fProperty>( name, time, data );
-				}
-				else if( const IECore::Box2dData *data = runTimeCast<const IECore::Box2dData>( attribute ) )
-				{
-					setProperty<OBox2dProperty>( name, time, data );
-				}
-				else if( const IECore::Box3iData *data = runTimeCast<const IECore::Box3iData>( attribute ) )
-				{
-					setProperty<OBox3iProperty>( name, time, data );
-				}
-				else if( const IECore::Box3fData *data = runTimeCast<const IECore::Box3fData>( attribute ) )
-				{
-					setProperty<OBox3fProperty>( name, time, data );
-				}
-				else if( const IECore::Box3dData *data = runTimeCast<const IECore::Box3dData>( attribute ) )
-				{
-					setProperty<OBox3dProperty>( name, time, data );
-				}
-				else if( const IECore::M33fData *data = runTimeCast<const IECore::M33fData>( attribute ) )
-				{
-					setProperty<OM33fProperty>( name, time, data );
-				}
-				else if( const IECore::M33dData *data = runTimeCast<const IECore::M33dData>( attribute ) )
-				{
-					setProperty<OM33dProperty>( name, time, data );
-				}
-				else if( const IECore::M44fData *data = runTimeCast<const IECore::M44fData>( attribute ) )
-				{
-					setProperty<OM44fProperty>( name, time, data );
-				}
-				else if( const IECore::M44dData *data = runTimeCast<const IECore::M44dData>( attribute ) )
-				{
-					setProperty<OM44dProperty>( name, time, data );
-				}
-				else if( const IECore::QuatfData *data = runTimeCast<const IECore::QuatfData>( attribute ) )
-				{
-					setProperty<OQuatfProperty>( name, time, data );
-				}
-				else if( const IECore::QuatdData *data = runTimeCast<const IECore::QuatdData>( attribute ) )
-				{
-					setProperty<OQuatdProperty>( name, time, data );
-				}
-				else if( const IECore::Color3fData *data = runTimeCast<const IECore::Color3fData>( attribute ) )
-				{
-					setProperty<OC3fProperty>( name, time, data );
-				}
-				else if( const IECore::Color4fData *data = runTimeCast<const IECore::Color4fData>( attribute ) )
-				{
-					setProperty<OC4fProperty>( name, time, data );
+					setProperty<OP2iProperty>( name, time, data );
 				}
 				else
 				{
-					Path path;
-					std::string pathStr;
-					this->path( path );
-					pathToString( path, pathStr );
-					IECore::msg(
-							IECore::Msg::Warning,
-							"AlembicScene::writeAttribute",
-							boost::str(
-								boost::format( "Cannot write attribute ( attribute name: '%1%', attribute type: '%2%', time: %3% ) at location '%4%'. " ) %
-									name.string() %
-									attribute->typeName() %
-									time %
-									pathStr
-							)
-						);
-
+					setProperty<OV2iProperty>( name, time, data );
 				}
 			}
+			else if( const IECore::V2fData *data = runTimeCast<const IECore::V2fData>( attribute ) )
+			{
+				if( data->getInterpretation() == GeometricData::Interpretation::Point )
+				{
+					setProperty<OP2fProperty>( name, time, data );
+				}
+				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+				{
+					setProperty<ON2fProperty>( name, time, data );
+				}
+				else
+				{
+					setProperty<OV2fProperty>( name, time, data );
+				}
+			}
+			else if( const IECore::V2dData *data = runTimeCast<const IECore::V2dData>( attribute ) )
+			{
+				if( data->getInterpretation() == GeometricData::Interpretation::Point )
+				{
+					setProperty<OP2dProperty>( name, time, data );
+				}
+				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+				{
+					setProperty<ON2dProperty>( name, time, data );
+				}
+				else
+				{
+					setProperty<OV2dProperty>( name, time, data );
+				}
+			}
+			else if( const IECore::V3iData *data = runTimeCast<const IECore::V3iData>( attribute ) )
+			{
+				if( data->getInterpretation() == GeometricData::Interpretation::Point )
+				{
+					setProperty<OP3iProperty>( name, time, data );
+				}
+				else
+				{
+					setProperty<OV3iProperty>( name, time, data );
+				}
+			}
+			else if( const IECore::V3fData *data = runTimeCast<const IECore::V3fData>( attribute ) )
+			{
+				if( data->getInterpretation() == GeometricData::Interpretation::Point )
+				{
+					setProperty<OP3fProperty>( name, time, data );
+				}
+				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+				{
+					setProperty<ON3fProperty>( name, time, data );
+				}
+				else
+				{
+					setProperty<OV3fProperty>( name, time, data );
+				}
+			}
+			else if( const IECore::V3dData *data = runTimeCast<const IECore::V3dData>( attribute ) )
+			{
+
+				if( data->getInterpretation() == GeometricData::Interpretation::Point )
+				{
+					setProperty<OP3dProperty>( name, time, data );
+				}
+				else if( data->getInterpretation() == GeometricData::Interpretation::Normal )
+				{
+					setProperty<ON3dProperty>( name, time, data );
+				}
+				else
+				{
+					setProperty<OV3dProperty>( name, time, data );
+				}
+			}
+			else if( const IECore::Box2iData *data = runTimeCast<const IECore::Box2iData>( attribute ) )
+			{
+				setProperty<OBox2iProperty>( name, time, data );
+			}
+			else if( const IECore::Box2fData *data = runTimeCast<const IECore::Box2fData>( attribute ) )
+			{
+				setProperty<OBox2fProperty>( name, time, data );
+			}
+			else if( const IECore::Box2dData *data = runTimeCast<const IECore::Box2dData>( attribute ) )
+			{
+				setProperty<OBox2dProperty>( name, time, data );
+			}
+			else if( const IECore::Box3iData *data = runTimeCast<const IECore::Box3iData>( attribute ) )
+			{
+				setProperty<OBox3iProperty>( name, time, data );
+			}
+			else if( const IECore::Box3fData *data = runTimeCast<const IECore::Box3fData>( attribute ) )
+			{
+				setProperty<OBox3fProperty>( name, time, data );
+			}
+			else if( const IECore::Box3dData *data = runTimeCast<const IECore::Box3dData>( attribute ) )
+			{
+				setProperty<OBox3dProperty>( name, time, data );
+			}
+			else if( const IECore::M33fData *data = runTimeCast<const IECore::M33fData>( attribute ) )
+			{
+				setProperty<OM33fProperty>( name, time, data );
+			}
+			else if( const IECore::M33dData *data = runTimeCast<const IECore::M33dData>( attribute ) )
+			{
+				setProperty<OM33dProperty>( name, time, data );
+			}
+			else if( const IECore::M44fData *data = runTimeCast<const IECore::M44fData>( attribute ) )
+			{
+				setProperty<OM44fProperty>( name, time, data );
+			}
+			else if( const IECore::M44dData *data = runTimeCast<const IECore::M44dData>( attribute ) )
+			{
+				setProperty<OM44dProperty>( name, time, data );
+			}
+			else if( const IECore::QuatfData *data = runTimeCast<const IECore::QuatfData>( attribute ) )
+			{
+				setProperty<OQuatfProperty>( name, time, data );
+			}
+			else if( const IECore::QuatdData *data = runTimeCast<const IECore::QuatdData>( attribute ) )
+			{
+				setProperty<OQuatdProperty>( name, time, data );
+			}
+			else if( const IECore::Color3fData *data = runTimeCast<const IECore::Color3fData>( attribute ) )
+			{
+				setProperty<OC3fProperty>( name, time, data );
+			}
+			else if( const IECore::Color4fData *data = runTimeCast<const IECore::Color4fData>( attribute ) )
+			{
+				setProperty<OC4fProperty>( name, time, data );
+			}
+			else
+			{
+				Path path;
+				std::string pathStr;
+				this->path( path );
+				pathToString( path, pathStr );
+				IECore::msg(
+						IECore::Msg::Warning,
+						"AlembicScene::writeAttribute",
+						boost::str(
+							boost::format( "Cannot write attribute ( attribute name: '%1%', attribute type: '%2%', time: %3% ) at location '%4%'. " ) %
+								name.string() %
+								attribute->typeName() %
+								time %
+								pathStr
+						)
+					);
+
+			}
+
 		}
 
 
