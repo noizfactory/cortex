@@ -1637,6 +1637,16 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
+			if ( name == SceneInterface::visibilityName )
+			{
+				T prop( m_xform.getProperties(), kVisibilityPropertyName );
+
+				m_scalarProperties.insert( std::make_pair( name, prop ) );
+				
+				prop.set( data->readable() );				
+				return;
+			}
+
 			OXformSchema &schema = m_xform.getSchema();
 
 			T prop( schema.getUserProperties(), name );
@@ -1661,18 +1671,14 @@ class AlembicScene::AlembicWriter : public AlembicIO
 				return;
 			}
 
-			// if ( name == SceneInterface::visibilityName )
-			// {
-			// 	if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
-			// 	{
-			// 		printf( "\nWriting visibility for %s", m_xform.getName().c_str() );
-
-			// 		OCompoundProperty defaultProperties = m_xform.getProperties();
-			// 		OScalarProperty visibilityProperty = defaultProperties.getProperty(kVisibilityPropertyName);
-			// 		visibilityProperty.setValue( time, data->readable() );
-			// 	}
-			// 	return;
-			// }
+			if ( name == SceneInterface::visibilityName )
+			{
+				if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
+				{
+					setProperty<OCharProperty>( name, time, data );
+				}
+				return; 
+			}
 
 			if( const IECore::BoolData *data = runTimeCast<const IECore::BoolData>( attribute ) )
 			{
