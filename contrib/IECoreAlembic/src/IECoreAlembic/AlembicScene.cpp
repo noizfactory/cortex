@@ -366,11 +366,7 @@ class AlembicScene::AlembicReader : public AlembicIO
 
 			IVisibilityProperty visibilityProperty = GetVisibilityProperty( xformObject );
 
-			if ( !visibilityProperty.valid() )
-			{
-				return;
-			}
-			else
+			if ( visibilityProperty.valid() )
 			{
 				attrs.push_back( InternedString( SceneInterface::visibilityName.string() ) );
 			}
@@ -548,7 +544,6 @@ class AlembicScene::AlembicReader : public AlembicIO
 				{
 					return new IECore::BoolData( true );
 				}
-				return nullptr;
 			}
 
 			const IXformSchema &schema = m_xform.getSchema();
